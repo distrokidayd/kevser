@@ -1,12 +1,15 @@
+import Navbar from "./components/Navbar";
+
 export const metadata = {
-  title: "Kevser Publishing House",
-  description: "Digital publishing platform for books, audiobooks and reader commentary."
+  title: "Kevser",
+  description: "Publishing platform"
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="tr">
-      <body>
+      <body style={{ margin: 0, background: "black" }}>
+        <Navbar />
         {children}
       </body>
     </html>
