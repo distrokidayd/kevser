@@ -14,11 +14,18 @@ export default function Navbar() {
       </div>
 
       <div style={{ display: "flex", gap: "20px" }}>
-        <a href="/" style={{ color: "white", textDecoration: "none" }}>Home</a>
-        <a href="/books" style={{ color: "white", textDecoration: "none" }}>Books</a>
-        <a href="/publishers" style={{ color: "white", textDecoration: "none" }}>Publishers</a>
+        <a href="/" style={link}>Home</a>
+        <a href="/books" style={link}>Books</a>
+        <a href="/audiobooks" style={link}>Audiobooks</a>
+        <a href="/articles" style={link}>Makaleler</a>
+        <a href="/publishers" style={link}>Publishers</a>
       </div>
 
     </div>
   );
 }
+
+const link = {
+  color: "white",
+  textDecoration: "none"
+};
