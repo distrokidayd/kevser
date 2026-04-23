@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import Navbar from "./components/Navbar";
 
 export const metadata = {
@@ -7,11 +8,13 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="tr">
-      <body style={{ margin: 0, background: "black" }}>
-        <Navbar />
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="tr">
+        <body style={{ margin: 0, background: "black" }}>
+          <Navbar />
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
