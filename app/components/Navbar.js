@@ -1,8 +1,10 @@
 "use client";
 
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 
 export default function Navbar() {
+  const { isSignedIn } = useUser();
+
   return (
     <div style={{
       display: "flex",
@@ -24,15 +26,13 @@ export default function Navbar() {
         <a href="/articles" style={link}>Makaleler</a>
         <a href="/publishers" style={link}>Publishers</a>
 
-        <SignedOut>
+        {isSignedIn ? (
+          <UserButton />
+        ) : (
           <SignInButton mode="modal">
             <button style={button}>Giriş Yap</button>
           </SignInButton>
-        </SignedOut>
-
-        <SignedIn>
-          <UserButton />
-        </SignedIn>
+        )}
       </div>
 
     </div>
