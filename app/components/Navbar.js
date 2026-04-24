@@ -1,3 +1,5 @@
+"use client";
+
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
 export default function Navbar() {
@@ -23,7 +25,7 @@ export default function Navbar() {
         <a href="/publishers" style={link}>Publishers</a>
 
         <SignedOut>
-          <SignInButton>
+          <SignInButton mode="modal">
             <button style={button}>Giriş Yap</button>
           </SignInButton>
         </SignedOut>
