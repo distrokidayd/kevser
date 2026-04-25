@@ -1,11 +1,21 @@
 import { createClient } from "@supabase/supabase-js";
 import { currentUser } from "@clerk/nextjs/server";
 
+export async function GET() {
+  return Response.json({
+    ok: true,
+    message: "create-profile api is working. Use POST to create profile."
+  });
+}
+
 export async function POST() {
   const user = await currentUser();
 
   if (!user) {
-    return new Response("Unauthorized", { status: 401 });
+    return Response.json(
+      { ok: false, error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   const supabase = createClient(
@@ -13,12 +23,32 @@ export async function POST() {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  const email = user.emailAddresses[0]?.emailAddress;
+  const email = user.emailAddresses?.[0]?.emailAddress || null;
+  const username =
+    user.username ||
+    user.firstName ||
+    email?.split("@")[0] ||
+    "kevser_user";
 
-  await supabase.from("profiles").upsert({
-    id: user.id,
-    email: email,
+  const { data, error } = await supabase
+    .from("profiles")
+    .upsert({
+      id: user.id,
+      email,
+      username,
+      role: "user"
+    })
+    .select();
+
+  if (error) {
+    return Response.json(
+      { ok: false, error: error.message },
+      { status: 500 }
+    );
+  }
+
+  return Response.json({
+    ok: true,
+    profile: data
   });
-
-  return Response.json({ success: true });
 }
