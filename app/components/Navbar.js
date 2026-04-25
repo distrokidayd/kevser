@@ -16,7 +16,7 @@ export default function Navbar() {
     }}>
 
       <div style={{ fontWeight: "bold" }}>
-        Kevser
+        <a href="/" style={brand}>Kevser</a>
       </div>
 
       <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
@@ -25,6 +25,10 @@ export default function Navbar() {
         <a href="/audiobooks" style={link}>Audiobooks</a>
         <a href="/articles" style={link}>Makaleler</a>
         <a href="/publishers" style={link}>Publishers</a>
+
+        {isSignedIn && (
+          <a href="/profile" style={profileLink}>Profile</a>
+        )}
 
         {isSignedIn ? (
           <UserButton />
@@ -39,9 +43,23 @@ export default function Navbar() {
   );
 }
 
+const brand = {
+  color: "white",
+  textDecoration: "none"
+};
+
 const link = {
   color: "white",
   textDecoration: "none"
+};
+
+const profileLink = {
+  color: "black",
+  background: "#f5b400",
+  textDecoration: "none",
+  padding: "8px 14px",
+  borderRadius: "8px",
+  fontWeight: "bold"
 };
 
 const button = {
