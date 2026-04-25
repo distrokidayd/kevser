@@ -1,9 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
 
 export default function BookPage() {
+  const { user, isSignedIn } = useUser();
+
   const [expandedPanel, setExpandedPanel] = useState(null);
+  const [hasBook, setHasBook] = useState(false);
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    async function checkBook() {
+      if (!isSignedIn || !user) {
+        setChecked(true);
+        setHasBook(false);
+        return;
+      }
+
+      const res = await fetch("/api/check-user-book", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          book_slug: "omerhayyam-rubailer"
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.ok && data.hasBook) {
+        setHasBook(true);
+      } else {
+        setHasBook(false);
+      }
+
+      setChecked(true);
+    }
+
+    checkBook();
+  }, [isSignedIn, user]);
 
   const leftPages = [
     { title: "Sayfa 12", text: "Kitaptan rastgele bir sayfa örneği burada görünecek." },
@@ -112,88 +149,119 @@ export default function BookPage() {
           </div>
         </section>
 
-        <section style={{
-          display: "grid",
-          gridTemplateColumns: expandedPanel ? "1fr" : "repeat(3, 1fr)",
-          gap: "24px",
-          marginTop: "50px"
-        }}>
-          {visiblePanels.map((panel) => {
-            const isExpanded = expandedPanel === panel.id;
+        {checked && !hasBook && (
+          <div style={{
+            border: "1px solid #333",
+            padding: "20px",
+            borderRadius: "12px",
+            marginTop: "40px",
+            background: "#111"
+          }}>
+            <p style={{ color: "#f5b400", margin: 0 }}>
+              Bu alana katkı yapmak için kitabı hesabınıza eklemeniz gerekiyor.
+            </p>
+            <p style={{ color: "#aaa", marginTop: "10px" }}>
+              Kitabı satın aldıysanız, profil sayfanızdaki “Kitap Ekle” alanından kitap içindeki mühür kodunu girerek bu kitabı hesabınıza ekleyebilirsiniz.
+            </p>
+            <a href="/profile" style={{
+              display: "inline-block",
+              marginTop: "12px",
+              background: "#f5b400",
+              color: "black",
+              padding: "10px 16px",
+              borderRadius: "10px",
+              textDecoration: "none",
+              fontWeight: "bold"
+            }}>
+              Profile Git
+            </a>
+          </div>
+        )}
 
-            return (
-              <div key={panel.id}>
-                <button
-                  onClick={() => setExpandedPanel(isExpanded ? null : panel.id)}
-                  style={{
-                    width: "100%",
-                    padding: "24px",
-                    borderRadius: "18px",
-                    border: "1px solid #333",
-                    background: panel.color,
-                    color: panel.text,
-                    textAlign: "left",
-                    fontSize: "20px",
-                    fontWeight: "bold",
-                    cursor: "pointer"
-                  }}
-                >
-                  {panel.title}
-                </button>
+        {checked && hasBook && (
+          <section style={{
+            display: "grid",
+            gridTemplateColumns: expandedPanel ? "1fr" : "repeat(3, 1fr)",
+            gap: "24px",
+            marginTop: "50px"
+          }}>
+            {visiblePanels.map((panel) => {
+              const isExpanded = expandedPanel === panel.id;
 
-                <div style={{
-                  marginTop: "14px",
-                  background: "white",
-                  color: "black",
-                  borderRadius: "18px",
-                  padding: "24px",
-                  minHeight: isExpanded ? "420px" : "260px"
-                }}>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <button
-                      onClick={() => setExpandedPanel(isExpanded ? null : panel.id)}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "#005bd3",
-                        fontWeight: "bold",
-                        cursor: "pointer"
-                      }}
-                    >
-                      {isExpanded ? "Sayfayı Küçült" : "Sayfayı Büyüt"}
-                    </button>
-                  </div>
-
-                  <p style={{ lineHeight: "1.7" }}>{panel.body}</p>
-
-                  <textarea
-                    placeholder="Katkınızı buraya yazın..."
+              return (
+                <div key={panel.id}>
+                  <button
+                    onClick={() => setExpandedPanel(isExpanded ? null : panel.id)}
                     style={{
                       width: "100%",
-                      height: isExpanded ? "220px" : "120px",
-                      marginTop: "20px",
-                      padding: "12px",
-                      border: "1px solid #ddd",
-                      borderRadius: "10px"
+                      padding: "24px",
+                      borderRadius: "18px",
+                      border: "1px solid #333",
+                      background: panel.color,
+                      color: panel.text,
+                      textAlign: "left",
+                      fontSize: "20px",
+                      fontWeight: "bold",
+                      cursor: "pointer"
                     }}
-                  />
-
-                  <button style={{
-                    marginTop: "14px",
-                    padding: "12px 24px",
-                    background: "black",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "10px",
-                    cursor: "pointer"
-                  }}>
-                    Gönder
+                  >
+                    {panel.title}
                   </button>
+
+                  <div style={{
+                    marginTop: "14px",
+                    background: "white",
+                    color: "black",
+                    borderRadius: "18px",
+                    padding: "24px",
+                    minHeight: isExpanded ? "420px" : "260px"
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                      <button
+                        onClick={() => setExpandedPanel(isExpanded ? null : panel.id)}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "#005bd3",
+                          fontWeight: "bold",
+                          cursor: "pointer"
+                        }}
+                      >
+                        {isExpanded ? "Sayfayı Küçült" : "Sayfayı Büyüt"}
+                      </button>
+                    </div>
+
+                    <p style={{ lineHeight: "1.7" }}>{panel.body}</p>
+
+                    <textarea
+                      placeholder="Katkınızı buraya yazın..."
+                      style={{
+                        width: "100%",
+                        height: isExpanded ? "220px" : "120px",
+                        marginTop: "20px",
+                        padding: "12px",
+                        border: "1px solid #ddd",
+                        borderRadius: "10px"
+                      }}
+                    />
+
+                    <button style={{
+                      marginTop: "14px",
+                      padding: "12px 24px",
+                      background: "black",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "10px",
+                      cursor: "pointer"
+                    }}>
+                      Gönder
+                    </button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </section>
+              );
+            })}
+          </section>
+        )}
 
       </div>
     </main>
