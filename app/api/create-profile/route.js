@@ -1,10 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 
 export async function POST() {
-  const { userId } = auth();
+  const user = await currentUser();
 
-  if (!userId) {
+  if (!user) {
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -13,18 +13,10 @@ export async function POST() {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  // Clerk user info al
-  const clerkUser = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
-    headers: {
-      Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
-    },
-  }).then(res => res.json());
+  const email = user.emailAddresses[0]?.emailAddress;
 
-  const email = clerkUser.email_addresses[0]?.email_address;
-
-  // Supabase profile oluştur
   await supabase.from("profiles").upsert({
-    id: userId,
+    id: user.id,
     email: email,
   });
 
