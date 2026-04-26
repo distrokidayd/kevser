@@ -15,37 +15,32 @@ export default function BooksPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <div className="overflow-hidden border-b border-amber-400/20 bg-amber-400/10">
-        <div className="marquee py-3 text-sm font-semibold text-amber-300">
-          <span>
-            Kitap artık seninle okunsun • Şerh / Yorum / Tartışma alanına katılmak için kitap görseline tıkla • Okuduğun kitabın yorumlu baskısına katkı ver • Klasik eserleri birlikte yeniden düşünelim • Çeviri katkını yayıncı havuzuna gönder •
-          </span>
+    <main style={page}>
+      <div style={marqueeWrap}>
+        <div style={marqueeText}>
+          Kitap artık seninle okunsun • Şerh / Yorum / Tartışma alanına katılmak için kitap görseline tıkla • Okuduğun kitabın yorumlu baskısına katkı ver • Klasik eserleri birlikte yeniden düşünelim • Çeviri katkını yayıncı havuzuna gönder •
         </div>
       </div>
 
-      <section className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-8 rounded-[2rem] border border-white/10 bg-white/5 p-7">
-          <div className="text-sm uppercase tracking-[0.35em] text-amber-300">
-            Kevser Books
-          </div>
-          <h1 className="mt-3 text-4xl font-semibold">Books</h1>
+      <section style={container}>
+        <div style={header}>
+          <div style={eyebrow}>Kevser Books</div>
+          <h1 style={title}>Books</h1>
         </div>
 
-        <section className="rounded-[2rem] border border-white/10 bg-white/5 p-7">
-          <div className={`grid gap-6 ${expandedBooksCard ? "grid-cols-1" : "grid-cols-2 md:grid-cols-3 xl:grid-cols-6"}`}>
+        <section style={catalogBox}>
+          <div style={expandedBooksCard ? gridExpanded : grid}>
 
             {(!expandedBooksCard || expandedBooksCard === "translation") && (
-              <div className={`rounded-[1.5rem] border border-amber-400/20 bg-[#111] p-3 ${expandedBooksCard ? "col-span-full" : ""}`}>
+              <div style={expandedBooksCard ? translationExpandedCard : card}>
                 {!expandedBooksCard && (
-                  <div className="flex aspect-[3/4] flex-col items-center justify-center rounded-[1.2rem] bg-gradient-to-br from-amber-800 to-black text-center">
-                    <div className="text-xs uppercase tracking-[0.3em] text-amber-300">
-                      Katkı
-                    </div>
-                    <div className="mt-3 text-xl font-bold">Çeviri</div>
+                  <div style={translationCover}>
+                    <div style={smallGold}>Katkı</div>
+                    <div style={coverTitle}>Çeviri</div>
+
                     <button
                       onClick={() => setExpandedBooksCard("translation")}
-                      className="mt-5 rounded-lg border border-blue-400 px-4 py-2 text-xs font-semibold text-blue-300"
+                      style={openButton}
                     >
                       Aç
                     </button>
@@ -54,30 +49,26 @@ export default function BooksPage() {
 
                 {expandedBooksCard === "translation" && (
                   <div>
-                    <div className="flex items-center justify-between gap-4">
+                    <div style={topLine}>
                       <div>
-                        <div className="text-sm uppercase tracking-[0.3em] text-amber-300">
-                          Books Katkı Kartı
-                        </div>
-                        <h2 className="mt-3 text-3xl font-semibold">
-                          Çeviri Katkısı Gönder
-                        </h2>
+                        <div style={eyebrow}>Books Katkı Kartı</div>
+                        <h2 style={sectionTitle}>Çeviri Katkısı Gönder</h2>
                       </div>
 
                       <button
                         onClick={() => setExpandedBooksCard(null)}
-                        className="rounded-xl border border-blue-500/40 px-4 py-2 text-sm font-semibold text-blue-300"
+                        style={blueButton}
                       >
                         Sayfayı Küçült
                       </button>
                     </div>
 
-                    <div className="mt-6 rounded-[1.3rem] bg-white p-6 text-black">
-                      <label className="text-sm font-semibold">
+                    <div style={formBox}>
+                      <label style={label}>
                         Çevirisine katkıda bulunmak istediğin kitabı seç
                       </label>
 
-                      <select className="mt-2 w-full rounded-xl border border-black/10 p-3">
+                      <select style={input}>
                         {books.map((book) => (
                           <option key={book.title}>
                             {book.author} — {book.title}
@@ -85,34 +76,28 @@ export default function BooksPage() {
                         ))}
                       </select>
 
-                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                      <div style={formGrid}>
                         <div>
-                          <label className="text-sm font-semibold">Sayfa No</label>
-                          <input className="mt-2 w-full rounded-xl border border-black/10 p-3" placeholder="Örn: 42" />
+                          <label style={label}>Sayfa No</label>
+                          <input style={input} placeholder="Örn: 42" />
                         </div>
 
                         <div>
-                          <label className="text-sm font-semibold">Dil</label>
-                          <input className="mt-2 w-full rounded-xl border border-black/10 p-3" placeholder="TR / EN / FR" />
+                          <label style={label}>Dil</label>
+                          <input style={input} placeholder="TR / EN / FR" />
                         </div>
                       </div>
 
-                      <label className="mt-4 block text-sm font-semibold">
-                        Orijinal Metin
-                      </label>
-                      <textarea className="mt-2 h-24 w-full rounded-xl border border-black/10 p-3" placeholder="Orijinal cümle veya paragraf..." />
+                      <label style={label}>Orijinal Metin</label>
+                      <textarea style={textareaSmall} placeholder="Orijinal cümle veya paragraf..." />
 
-                      <label className="mt-4 block text-sm font-semibold">
-                        Kendi Çeviri Önerin
-                      </label>
-                      <textarea className="mt-2 h-28 w-full rounded-xl border border-black/10 p-3" placeholder="Daha iyi olduğunu düşündüğün çeviri..." />
+                      <label style={label}>Kendi Çeviri Önerin</label>
+                      <textarea style={textareaMedium} placeholder="Daha iyi olduğunu düşündüğün çeviri..." />
 
-                      <label className="mt-4 block text-sm font-semibold">
-                        Not
-                      </label>
-                      <textarea className="mt-2 h-20 w-full rounded-xl border border-black/10 p-3" placeholder="Bu çeviriyi neden öneriyorsun?" />
+                      <label style={label}>Not</label>
+                      <textarea style={textareaSmall} placeholder="Bu çeviriyi neden öneriyorsun?" />
 
-                      <button className="mt-5 rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white">
+                      <button style={submitButton}>
                         Yayıncı Havuzuna Gönder
                       </button>
                     </div>
@@ -122,43 +107,256 @@ export default function BooksPage() {
             )}
 
             {!expandedBooksCard && books.map((book) => (
-              <a
-                key={book.title}
-                href={book.href}
-                className="rounded-[1.5rem] border border-white/10 bg-[#111] p-3 text-white no-underline"
-              >
-                <div className="flex aspect-[3/4] items-center justify-center rounded-[1.2rem] bg-gradient-to-br from-amber-950 to-black p-4 text-center font-semibold">
+              <a key={book.title} href={book.href} style={cardLink}>
+                <div style={bookCover}>
                   {book.title}
                 </div>
-                <div className="mt-3 text-sm font-semibold">{book.title}</div>
-                <div className="text-xs text-zinc-400">{book.author}</div>
+
+                <div style={bookTitle}>{book.title}</div>
+                <div style={bookAuthor}>{book.author}</div>
               </a>
             ))}
+
           </div>
         </section>
       </section>
 
       <style jsx>{`
-        .marquee {
-          white-space: nowrap;
-          overflow: hidden;
-        }
-
-        .marquee span {
-          display: inline-block;
-          padding-left: 100%;
-          animation: marquee 22s linear infinite;
-        }
-
         @keyframes marquee {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-100%);
-          }
+          0% { transform: translateX(100%); }
+          100% { transform: translateX(-100%); }
         }
       `}</style>
     </main>
   );
 }
+
+const page = {
+  minHeight: "100vh",
+  background: "black",
+  color: "white"
+};
+
+const marqueeWrap = {
+  overflow: "hidden",
+  borderBottom: "1px solid rgba(245, 180, 0, 0.25)",
+  background: "rgba(245, 180, 0, 0.08)"
+};
+
+const marqueeText = {
+  whiteSpace: "nowrap",
+  color: "#f5b400",
+  fontWeight: "bold",
+  fontSize: "14px",
+  padding: "12px 0",
+  display: "inline-block",
+  animation: "marquee 24s linear infinite"
+};
+
+const container = {
+  maxWidth: "1300px",
+  margin: "0 auto",
+  padding: "40px 24px"
+};
+
+const header = {
+  border: "1px solid #333",
+  borderRadius: "28px",
+  padding: "28px",
+  background: "#111",
+  marginBottom: "32px"
+};
+
+const eyebrow = {
+  color: "#f5b400",
+  letterSpacing: "4px",
+  textTransform: "uppercase",
+  fontSize: "13px"
+};
+
+const title = {
+  fontSize: "42px",
+  marginTop: "12px",
+  marginBottom: 0
+};
+
+const catalogBox = {
+  border: "1px solid #333",
+  borderRadius: "28px",
+  padding: "28px",
+  background: "#0d0d0d"
+};
+
+const grid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
+  gap: "24px"
+};
+
+const gridExpanded = {
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: "24px"
+};
+
+const card = {
+  border: "1px solid #333",
+  borderRadius: "22px",
+  padding: "12px",
+  background: "#111"
+};
+
+const cardLink = {
+  ...card,
+  color: "white",
+  textDecoration: "none",
+  display: "block"
+};
+
+const bookCover = {
+  aspectRatio: "3 / 4",
+  borderRadius: "18px",
+  background: "linear-gradient(135deg, #3b230f, #050505)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "16px",
+  fontWeight: "bold"
+};
+
+const translationCover = {
+  aspectRatio: "3 / 4",
+  borderRadius: "18px",
+  background: "linear-gradient(135deg, #9a5b00, #050505)",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "16px"
+};
+
+const smallGold = {
+  color: "#f5b400",
+  letterSpacing: "4px",
+  textTransform: "uppercase",
+  fontSize: "12px"
+};
+
+const coverTitle = {
+  marginTop: "12px",
+  fontSize: "24px",
+  fontWeight: "bold"
+};
+
+const openButton = {
+  marginTop: "22px",
+  border: "1px solid #60a5fa",
+  color: "#60a5fa",
+  background: "transparent",
+  borderRadius: "10px",
+  padding: "8px 16px",
+  cursor: "pointer",
+  fontWeight: "bold"
+};
+
+const bookTitle = {
+  marginTop: "14px",
+  fontWeight: "bold"
+};
+
+const bookAuthor = {
+  marginTop: "4px",
+  color: "#aaa",
+  fontSize: "14px"
+};
+
+const translationExpandedCard = {
+  border: "1px solid rgba(245, 180, 0, 0.35)",
+  borderRadius: "24px",
+  padding: "24px",
+  background: "#111"
+};
+
+const topLine = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: "20px",
+  alignItems: "center"
+};
+
+const sectionTitle = {
+  fontSize: "34px",
+  marginTop: "10px"
+};
+
+const blueButton = {
+  border: "1px solid #2563eb",
+  color: "#60a5fa",
+  background: "transparent",
+  borderRadius: "12px",
+  padding: "10px 14px",
+  cursor: "pointer",
+  fontWeight: "bold"
+};
+
+const formBox = {
+  marginTop: "24px",
+  borderRadius: "22px",
+  background: "white",
+  color: "black",
+  padding: "28px"
+};
+
+const label = {
+  display: "block",
+  fontSize: "14px",
+  fontWeight: "bold",
+  marginTop: "16px",
+  marginBottom: "8px"
+};
+
+const input = {
+  width: "100%",
+  border: "1px solid #ddd",
+  borderRadius: "12px",
+  padding: "14px",
+  fontSize: "15px"
+};
+
+const formGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+  gap: "16px",
+  marginTop: "8px"
+};
+
+const textareaSmall = {
+  width: "100%",
+  height: "100px",
+  border: "1px solid #ddd",
+  borderRadius: "12px",
+  padding: "14px",
+  fontSize: "15px"
+};
+
+const textareaMedium = {
+  width: "100%",
+  height: "140px",
+  border: "1px solid #ddd",
+  borderRadius: "12px",
+  padding: "14px",
+  fontSize: "15px"
+};
+
+const submitButton = {
+  marginTop: "20px",
+  background: "black",
+  color: "white",
+  border: "none",
+  borderRadius: "12px",
+  padding: "14px 20px",
+  cursor: "pointer",
+  fontWeight: "bold"
+};
