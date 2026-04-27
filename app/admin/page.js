@@ -2,156 +2,225 @@
 
 import { useState } from "react";
 
-export default function AdminPage() {
-  const [form, setForm] = useState({
-    publisher_code: "0759",
-    author_code: "0007",
-    genre_code: "S01",
-    content_area: "01",
-    language_code: "TR",
-    contributor_code: "0042",
-    product_number: "000001"
-  });
-
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  function updateField(name, value) {
-    setForm({
-      ...form,
-      [name]: value
-    });
-  }
-
-  async function createSeal() {
-    setLoading(true);
-    setResult(null);
-
-    const res = await fetch("/api/admin/create-seal", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(form)
-    });
-
-    const data = await res.json();
-
-    setResult(data);
-    setLoading(false);
-  }
+export default function AdminPanel() {
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   return (
-    <main style={{
-      minHeight: "100vh",
-      background: "black",
-      color: "white",
-      padding: "40px"
-    }}>
-      <div style={{
-        maxWidth: "1000px",
-        margin: "0 auto"
-      }}>
-        <h1>Admin Panel</h1>
-        <p style={{ color: "#aaa" }}>
-          Mühür kodu üretme alanı.
+    <main style={styles.page}>
+      <section style={styles.header}>
+        <p style={styles.smallTitle}>Kevser Yayın Evi</p>
+        <h1 style={styles.title}>Admin Paneli</h1>
+        <p style={styles.subtitle}>
+          Kullanıcı, yayıncı, şikayet, itiraz, kitap ve mühür kodu yönetimi
         </p>
+      </section>
 
-        <div style={{
-          marginTop: "30px",
-          border: "1px solid #333",
-          borderRadius: "20px",
-          padding: "30px",
-          background: "#111"
-        }}>
-          <h2>Mühür Üret</h2>
+      <section style={styles.tabs}>
+        <button
+          style={activeTab === "dashboard" ? styles.activeTab : styles.tab}
+          onClick={() => setActiveTab("dashboard")}
+        >
+          Admin Dashboard
+        </button>
 
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "16px",
-            marginTop: "20px"
-          }}>
-            <Input label="Yayın Evi Kodu" name="publisher_code" value={form.publisher_code} onChange={updateField} />
-            <Input label="Yazar Kodu" name="author_code" value={form.author_code} onChange={updateField} />
-            <Input label="Tür Kodu" name="genre_code" value={form.genre_code} onChange={updateField} />
-            <Input label="Alan Kodu" name="content_area" value={form.content_area} onChange={updateField} />
-            <Input label="Dil Kodu" name="language_code" value={form.language_code} onChange={updateField} />
-            <Input label="Çevirmen / Editör Kodu" name="contributor_code" value={form.contributor_code} onChange={updateField} />
-            <Input label="Ürün / Nüsha Numarası" name="product_number" value={form.product_number} onChange={updateField} />
-          </div>
+        <button
+          style={activeTab === "publisherApplications" ? styles.activeTab : styles.tab}
+          onClick={() => setActiveTab("publisherApplications")}
+        >
+          Yayıncı Başvuruları
+        </button>
 
-          <button
-            onClick={createSeal}
-            disabled={loading}
-            style={{
-              marginTop: "24px",
-              background: "#f5b400",
-              color: "black",
-              border: "none",
-              borderRadius: "12px",
-              padding: "14px 22px",
-              fontWeight: "bold",
-              cursor: "pointer"
-            }}
-          >
-            {loading ? "Üretiliyor..." : "Mühür Üret"}
-          </button>
+        <button
+          style={activeTab === "reports" ? styles.activeTab : styles.tab}
+          onClick={() => setActiveTab("reports")}
+        >
+          Şikayet Havuzu
+        </button>
 
-          {result && (
-            <div style={{
-              marginTop: "24px",
-              border: "1px solid #333",
-              borderRadius: "16px",
-              padding: "20px",
-              background: "black"
-            }}>
-              {result.ok ? (
-                <>
-                  <p style={{ color: "#4ade80" }}>Mühür başarıyla üretildi:</p>
-                  <h2 style={{ marginTop: "10px", color: "#f5b400" }}>
-                    {result.code}
-                  </h2>
-                </>
-              ) : (
-                <>
-                  <p style={{ color: "#f87171" }}>Hata:</p>
-                  <pre style={{ whiteSpace: "pre-wrap" }}>
-                    {result.error}
-                  </pre>
-                </>
-              )}
+        <button
+          style={activeTab === "appeals" ? styles.activeTab : styles.tab}
+          onClick={() => setActiveTab("appeals")}
+        >
+          İtirazlar
+        </button>
+
+        <button
+          style={activeTab === "books" ? styles.activeTab : styles.tab}
+          onClick={() => setActiveTab("books")}
+        >
+          Kitap Yönetimi
+        </button>
+
+        <button
+          style={activeTab === "seal" ? styles.activeTab : styles.tab}
+          onClick={() => setActiveTab("seal")}
+        >
+          Mühür Kodu
+        </button>
+      </section>
+
+      {activeTab === "dashboard" && (
+        <section style={styles.card}>
+          <h2 style={styles.sectionTitle}>Admin Dashboard</h2>
+
+          <div style={styles.grid}>
+            <div style={styles.infoBox}>
+              <h3>Kullanıcı Yönetimi</h3>
+              <p>Kullanıcı profilleri ve roller burada yönetilecek.</p>
             </div>
-          )}
-        </div>
-      </div>
+
+            <div style={styles.infoBox}>
+              <h3>Yayıncı Yönetimi</h3>
+              <p>Yayıncı başvuruları ve yetkilendirmeler burada kontrol edilecek.</p>
+            </div>
+
+            <div style={styles.infoBox}>
+              <h3>Moderasyon</h3>
+              <p>Şikayetler, askıya alınan içerikler ve itirazlar burada izlenecek.</p>
+            </div>
+
+            <div style={styles.infoBox}>
+              <h3>Kitap Sistemi</h3>
+              <p>Kitaplar, mühür kodları ve kullanıcı kitap erişimleri yönetilecek.</p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {activeTab === "publisherApplications" && (
+        <section style={styles.card}>
+          <h2 style={styles.sectionTitle}>Yayıncı Başvuruları</h2>
+          <p style={styles.emptyText}>
+            Yayıncı başvuru sistemi sonraki adımda Supabase’e bağlanacak.
+          </p>
+        </section>
+      )}
+
+      {activeTab === "reports" && (
+        <section style={styles.card}>
+          <h2 style={styles.sectionTitle}>Şikayet Havuzu</h2>
+          <p style={styles.emptyText}>
+            Yayıncı havuzundan gelen şikayet kayıtları burada admin tarafından izlenecek.
+          </p>
+        </section>
+      )}
+
+      {activeTab === "appeals" && (
+        <section style={styles.card}>
+          <h2 style={styles.sectionTitle}>İtirazlar</h2>
+          <p style={styles.emptyText}>
+            Askıya alınan içeriklere gelen kullanıcı itirazları burada nihai karara bağlanacak.
+          </p>
+        </section>
+      )}
+
+      {activeTab === "books" && (
+        <section style={styles.card}>
+          <h2 style={styles.sectionTitle}>Kitap Yönetimi</h2>
+          <p style={styles.emptyText}>
+            Kitap ekleme, düzenleme ve erişim yönetimi burada geliştirilecek.
+          </p>
+        </section>
+      )}
+
+      {activeTab === "seal" && (
+        <section style={styles.card}>
+          <h2 style={styles.sectionTitle}>Mühür Kodu</h2>
+
+          <div style={styles.infoBox}>
+            <h3>Mühür Kodu Üretimi</h3>
+            <p>
+              Admin burada kitaplara özel mühür kodu üretecek. Bu bölüm mevcut
+              <strong> app/api/admin/create-seal/route.js </strong>
+              API’sine bağlanacak.
+            </p>
+          </div>
+        </section>
+      )}
     </main>
   );
 }
 
-function Input({ label, name, value, onChange }) {
-  return (
-    <label style={{ display: "block" }}>
-      <div style={{
-        color: "#aaa",
-        marginBottom: "8px",
-        fontSize: "14px"
-      }}>
-        {label}
-      </div>
-
-      <input
-        value={value}
-        onChange={(e) => onChange(name, e.target.value)}
-        style={{
-          width: "100%",
-          padding: "12px",
-          borderRadius: "10px",
-          border: "1px solid #333",
-          background: "black",
-          color: "white"
-        }}
-      />
-    </label>
-  );
-}
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "#f4efe5",
+    padding: "32px",
+    color: "#2d2418",
+    fontFamily: "Arial, sans-serif",
+  },
+  header: {
+    background: "#24180f",
+    color: "#fff",
+    padding: "28px",
+    borderRadius: "18px",
+    marginBottom: "20px",
+  },
+  smallTitle: {
+    margin: 0,
+    color: "#d8b46a",
+    fontSize: "14px",
+  },
+  title: {
+    margin: "8px 0",
+    fontSize: "34px",
+  },
+  subtitle: {
+    margin: 0,
+    color: "#eee2cf",
+  },
+  tabs: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "10px",
+    marginBottom: "20px",
+  },
+  tab: {
+    padding: "12px 16px",
+    borderRadius: "12px",
+    border: "1px solid #d8c7aa",
+    background: "#fff",
+    cursor: "pointer",
+    color: "#3b2f20",
+    fontWeight: "600",
+  },
+  activeTab: {
+    padding: "12px 16px",
+    borderRadius: "12px",
+    border: "1px solid #24180f",
+    background: "#24180f",
+    cursor: "pointer",
+    color: "#fff",
+    fontWeight: "700",
+  },
+  card: {
+    background: "#fffaf2",
+    border: "1px solid #e2d2b8",
+    borderRadius: "18px",
+    padding: "24px",
+    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+  },
+  sectionTitle: {
+    margin: "0 0 18px 0",
+    fontSize: "26px",
+    color: "#2d2418",
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "16px",
+  },
+  infoBox: {
+    background: "#fff",
+    border: "1px solid #e5d6bd",
+    borderRadius: "14px",
+    padding: "18px",
+  },
+  emptyText: {
+    background: "#fff",
+    border: "1px dashed #c9b28c",
+    borderRadius: "12px",
+    padding: "18px",
+    color: "#6f604c",
+  },
+};
