@@ -1,12 +1,29 @@
+import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req) {
   try {
+    const { userId } = auth();
+
+    if (!userId) {
+      return Response.json(
+        { success: false, error: "Giriş yapılmamış." },
+        { status: 401 }
+      );
+    }
+
     const { reportId, decision } = await req.json();
 
     if (!reportId || !decision) {
       return Response.json(
         { success: false, error: "reportId ve decision zorunludur." },
+        { status: 400 }
+      );
+    }
+
+    if (!["approve", "reject"].includes(decision)) {
+      return Response.json(
+        { success: false, error: "Geçersiz karar." },
         { status: 400 }
       );
     }
@@ -33,10 +50,31 @@ export async function POST(req) {
       ? report.publisher_votes
       : [];
 
-    const newVotes = [...currentVotes, decision];
+    const alreadyVoted = currentVotes.some((vote) => vote.userId === userId);
 
-    const approveCount = newVotes.filter((v) => v === "approve").length;
-    const rejectCount = newVotes.filter((v) => v === "reject").length;
+    if (alreadyVoted) {
+      return Response.json(
+        { success: false, error: "Bu şikayet için zaten oy verdiniz." },
+        { status: 400 }
+      );
+    }
+
+    const newVotes = [
+      ...currentVotes,
+      {
+        userId,
+        decision,
+        votedAt: new Date().toISOString(),
+      },
+    ];
+
+    const approveCount = newVotes.filter(
+      (vote) => vote.decision === "approve"
+    ).length;
+
+    const rejectCount = newVotes.filter(
+      (vote) => vote.decision === "reject"
+    ).length;
 
     let newStatus = report.status || "pending";
 
