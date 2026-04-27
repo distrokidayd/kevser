@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function ProfilePage() {
   const { user, isSignedIn } = useUser();
@@ -11,6 +11,27 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [expandedBox, setExpandedBox] = useState(null);
+  const [isPublisher, setIsPublisher] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  useEffect(() => {
+    loadMyProfile();
+  }, []);
+
+  async function loadMyProfile() {
+    try {
+      const res = await fetch("/api/get-my-profile");
+      const data = await res.json();
+
+      if (data.success) {
+        setIsPublisher(data.isPublisher);
+      }
+    } catch (error) {
+      console.error("Profil rolü alınamadı:", error);
+    } finally {
+      setProfileLoading(false);
+    }
+  }
 
   async function addBook() {
     if (!sealCode.trim()) return;
@@ -41,8 +62,7 @@ export default function ProfilePage() {
           <div style={styles.card}>
             <h1>Giriş yapmanız gerekiyor</h1>
             <p style={styles.muted}>
-              Profil, mesajlar ve kitap ekleme alanını kullanmak için giriş
-              yapmalısınız.
+              Profil, mesajlar ve kitap ekleme alanını kullanmak için giriş yapmalısınız.
             </p>
           </div>
         </section>
@@ -137,8 +157,7 @@ export default function ProfilePage() {
               Hoş geldin {user?.firstName || user?.username || "Kevser Üyesi"}
             </h1>
             <p style={styles.muted}>
-              Kitapların, mühür kodların, mesajların, bildirimlerin ve yayıncı
-              durumun burada toplanır.
+              Kitapların, mühür kodların, mesajların, bildirimlerin ve yayıncı durumun burada toplanır.
             </p>
           </div>
 
@@ -149,11 +168,11 @@ export default function ProfilePage() {
 
             <div>
               <div style={styles.username}>
-                {user?.username ||
-                  user?.primaryEmailAddress?.emailAddress ||
-                  "Kullanıcı"}
+                {user?.username || user?.primaryEmailAddress?.emailAddress || "Kullanıcı"}
               </div>
-              <div style={styles.role}>Üye</div>
+              <div style={styles.role}>
+                {profileLoading ? "Rol yükleniyor..." : isPublisher ? "Yayıncı" : "Üye"}
+              </div>
             </div>
           </div>
         </header>
@@ -192,8 +211,8 @@ export default function ProfilePage() {
 
             <SideButton
               active={activeTab === "publisher"}
-              title="Yayıncı Başvurusu"
-              desc="Başvuru / stüdyo erişimi"
+              title="Yayıncı / Stüdyo"
+              desc="Başvuru veya stüdyo erişimi"
               onClick={() => setActiveTab("publisher")}
             />
           </aside>
@@ -266,15 +285,9 @@ export default function ProfilePage() {
                           <div style={styles.cooldown}>{msg.cooldown}</div>
 
                           <div style={styles.actionRow}>
-                            <button style={styles.smallButton}>
-                              Mesaj Gönder
-                            </button>
-                            <button style={styles.smallButton}>
-                              Arkadaşlık İsteği Gönder
-                            </button>
-                            <button style={styles.dangerSmallButton}>
-                              Bu kişiden mesaj alma
-                            </button>
+                            <button style={styles.smallButton}>Mesaj Gönder</button>
+                            <button style={styles.smallButton}>Arkadaşlık İsteği Gönder</button>
+                            <button style={styles.dangerSmallButton}>Bu kişiden mesaj alma</button>
                           </div>
                         </div>
                       </div>
@@ -296,13 +309,9 @@ export default function ProfilePage() {
                         <p>{msg.text}</p>
 
                         <div style={styles.actionRow}>
-                          <button style={styles.smallButton}>
-                            Arkadaşlık İsteği Gönder
-                          </button>
+                          <button style={styles.smallButton}>Arkadaşlık İsteği Gönder</button>
                           <button style={styles.smallButton}>Katıl</button>
-                          <button style={styles.dangerSmallButton}>
-                            Şikayet Et
-                          </button>
+                          <button style={styles.dangerSmallButton}>Şikayet Et</button>
                         </div>
                       </div>
                     ))}
@@ -323,10 +332,7 @@ export default function ProfilePage() {
                     <div style={styles.heroBadge}>Mühür Kodu</div>
                     <h2>Kitabı Hesabıma Ekle</h2>
                     <p style={styles.muted}>
-                      Her basılı veya dijital Kevser kitabının ön kısmında
-                      platformu anlatan metin ve o kitaba özel mühür kodu
-                      bulunur. Bu kodu girince kitap “Kitaplarım” alanına
-                      eklenir.
+                      Her basılı veya dijital Kevser kitabının ön kısmında platformu anlatan metin ve o kitaba özel mühür kodu bulunur. Bu kodu girince kitap “Kitaplarım” alanına eklenir.
                     </p>
 
                     <input
@@ -358,14 +364,10 @@ export default function ProfilePage() {
                   <div style={styles.ownershipInfo}>
                     <h2>Kitap Sahipliği Nasıl Çalışır?</h2>
                     <p>
-                      Kullanıcı bir kitabı satın aldığında kitabın içindeki
-                      mühür kodunu kullanır. Sistem bu kodun hangi kitaba ait
-                      olduğunu tanır ve kitabı kullanıcının hesabına bağlar.
+                      Kullanıcı bir kitabı satın aldığında kitabın içindeki mühür kodunu kullanır. Sistem bu kodun hangi kitaba ait olduğunu tanır ve kitabı kullanıcının hesabına bağlar.
                     </p>
                     <p>
-                      Böylece Books sayfasında ilgili kitaba girildiğinde
-                      şerh, yorum ve tahlil alanı yalnızca kitabı gerçekten
-                      sahiplenen üyeye açılır.
+                      Böylece Books sayfasında ilgili kitaba girildiğinde şerh, yorum ve tahlil alanı yalnızca kitabı gerçekten sahiplenen üyeye açılır.
                     </p>
                   </div>
                 </section>
@@ -384,20 +386,19 @@ export default function ProfilePage() {
 
                         <div>
                           <div style={styles.meta}>{book.language}</div>
-                          <h3>{book.author} — {book.title}</h3>
+                          <h3>
+                            {book.author} — {book.title}
+                          </h3>
                           <div style={styles.bookStatus}>{book.status}</div>
                           <p style={styles.muted}>
-                            Bu kitap hesabınıza bağlı olduğu için ilgili kitap
-                            sayfasında yorum, şerh ve tahlil yazabilirsiniz.
+                            Bu kitap hesabınıza bağlı olduğu için ilgili kitap sayfasında yorum, şerh ve tahlil yazabilirsiniz.
                           </p>
 
                           <div style={styles.actionRow}>
                             <a href={book.slug} style={styles.linkPrimary}>
                               Kitap Sayfasına Git
                             </a>
-                            <button style={styles.smallButton}>
-                              Katkılarımı Gör
-                            </button>
+                            <button style={styles.smallButton}>Katkılarımı Gör</button>
                           </div>
                         </div>
                       </div>
@@ -414,17 +415,9 @@ export default function ProfilePage() {
                   desc="Yorum cevapları, tartışmalar, kitap sahipliği ve sistem haberleri burada görünür."
                 />
 
-                <div style={styles.notice}>
-                  Bir yorumuna yeni cevap geldi.
-                </div>
-
-                <div style={styles.notice}>
-                  Rubailer kitabında yeni tartışma başlatıldı.
-                </div>
-
-                <div style={styles.notice}>
-                  Aynı kitabı alanlardan 3 yeni mesaj var.
-                </div>
+                <div style={styles.notice}>Bir yorumuna yeni cevap geldi.</div>
+                <div style={styles.notice}>Rubailer kitabında yeni tartışma başlatıldı.</div>
+                <div style={styles.notice}>Aynı kitabı alanlardan 3 yeni mesaj var.</div>
               </>
             )}
 
@@ -438,11 +431,7 @@ export default function ProfilePage() {
                 <div style={styles.profileGrid}>
                   <div style={styles.formCard}>
                     <label style={styles.label}>Görünen Ad</label>
-                    <input
-                      value={user?.firstName || ""}
-                      readOnly
-                      style={styles.input}
-                    />
+                    <input value={user?.firstName || ""} readOnly style={styles.input} />
                   </div>
 
                   <div style={styles.formCard}>
@@ -456,16 +445,12 @@ export default function ProfilePage() {
 
                   <div style={styles.formCard}>
                     <label style={styles.label}>Müstear İsim</label>
-                    <input
-                      placeholder="İleride düzenlenebilir"
-                      readOnly
-                      style={styles.input}
-                    />
+                    <input placeholder="İleride düzenlenebilir" readOnly style={styles.input} />
                   </div>
 
                   <div style={styles.formCard}>
                     <label style={styles.label}>Profil Durumu</label>
-                    <input value="Aktif Üye" readOnly style={styles.input} />
+                    <input value={isPublisher ? "Yayıncı" : "Aktif Üye"} readOnly style={styles.input} />
                   </div>
                 </div>
               </>
@@ -474,41 +459,389 @@ export default function ProfilePage() {
             {activeTab === "publisher" && (
               <>
                 <PanelHeader
-                  title="Yayıncı Başvurusu"
-                  desc="Kullanıcı yayıncı değilse başvuru yapabilir. Admin onaylarsa bu alan aktif hale gelir ve Stüdyo Dashboard erişimi açılır."
+                  title="Yayıncı / Stüdyo"
+                  desc="Yayıncı değilsen başvuru yaparsın. Admin kabul ederse bu bölüm stüdyo erişimine dönüşür."
                 />
 
-                <div style={styles.publisherGrid}>
-                  <div style={styles.publisherCard}>
-                    <div style={styles.heroBadge}>Pasif</div>
-                    <h2>Yayıncı değilsiniz</h2>
-                    <p style={styles.muted}>
-                      Yayıncı olmak için başvuru formunu doldurabilirsiniz.
-                      Başvuru admin panelinde incelenir.
-                    </p>
-                    <a href="/publishers" style={styles.linkPrimary}>
-                      Yayıncı Başvurusu Yap
-                    </a>
-                  </div>
-
-                  <div style={styles.publisherCardActive}>
-                    <div style={styles.heroBadgeGreen}>Aktif</div>
-                    <h2>Yayıncı hesabı aktif olursa</h2>
-                    <p style={styles.muted}>
-                      Bu alandan Stüdyo Dashboard, Havuz, Gelirler ve Yayıncı
-                      Profil Ayarları ekranlarına geçiş yapılır.
-                    </p>
-                    <a href="/publisher" style={styles.linkGreen}>
-                      Stüdyo Dashboard’a Git
-                    </a>
-                  </div>
-                </div>
+                <PublisherStudioSection
+                  isPublisher={isPublisher}
+                  user={user}
+                />
               </>
             )}
           </section>
         </section>
       </section>
     </main>
+  );
+}
+
+function PublisherStudioSection({ isPublisher, user }) {
+  const [form, setForm] = useState({
+    fullName: user?.fullName || user?.firstName || "",
+    email: user?.primaryEmailAddress?.emailAddress || "",
+    phone: "",
+    website: "",
+    instagram: "",
+    twitter: "",
+    youtube: "",
+    hasExperience: "",
+    experience: "",
+    reason: "",
+  });
+
+  const [agreementOpen, setAgreementOpen] = useState(false);
+  const [agreementAccepted, setAgreementAccepted] = useState(false);
+  const [voiceAccepted, setVoiceAccepted] = useState(false);
+  const [voiceFileName, setVoiceFileName] = useState("");
+  const [applicationLoading, setApplicationLoading] = useState(false);
+  const [applicationMessage, setApplicationMessage] = useState("");
+
+  const agreementText = "Kevser platform kurallarını kabul ediyorum.";
+
+  function updateField(field, value) {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }
+
+  function goStudio() {
+    if (!isPublisher) {
+      alert("Yayıncı olarak kabul edilmeniz gerekiyor.");
+      return;
+    }
+
+    window.location.href = "/publisher";
+  }
+
+  async function submitPublisherApplication() {
+    setApplicationMessage("");
+
+    if (!form.fullName || !form.email || !form.reason) {
+      setApplicationMessage("Ad soyad, e-posta ve başvuru sebebi zorunludur.");
+      return;
+    }
+
+    if (!agreementAccepted) {
+      setApplicationMessage("Başvuru için Kevser Yayın Evi sözleşmesini kabul etmelisiniz.");
+      return;
+    }
+
+    if (!voiceAccepted) {
+      setApplicationMessage("Başvuru için sesli kabul kaydı veya MP3 onayı gereklidir.");
+      return;
+    }
+
+    try {
+      setApplicationLoading(true);
+
+      const experienceText = `
+Website: ${form.website}
+Instagram: ${form.instagram}
+Twitter/X: ${form.twitter}
+YouTube: ${form.youtube}
+Yayıncılık deneyimi: ${form.hasExperience}
+Deneyim açıklaması: ${form.experience}
+Sesli onay: ${voiceFileName || "Mikrofon/demo kabul"}
+Sözleşme: ${agreementText}
+      `;
+
+      const res = await fetch("/api/create-publisher-application", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          fullName: form.fullName,
+          email: form.email,
+          phone: form.phone,
+          address: "",
+          penName: "",
+          religion: "",
+          denomination: "",
+          experience: experienceText,
+          reason: form.reason,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setApplicationMessage(data.error || "Başvuru gönderilemedi.");
+        return;
+      }
+
+      setApplicationMessage("Yayıncı başvurunuz admin paneline gönderildi.");
+    } catch (error) {
+      console.error("Yayıncı başvuru hatası:", error);
+      setApplicationMessage("Başvuru gönderilirken hata oluştu.");
+    } finally {
+      setApplicationLoading(false);
+    }
+  }
+
+  if (isPublisher) {
+    return (
+      <section style={styles.publisherStudioGrid}>
+        <div style={styles.permanentFilesCard}>
+          <div style={styles.heroBadgeGreen}>Yayıncı Aktif</div>
+          <h2>Kalıcı Dosyalarım</h2>
+          <p style={styles.muted}>
+            Yayıncı olarak kabul edildiğiniz için başvuru kartı artık kalıcı dosyalar alanına dönüşür.
+            Sesli kabul kaydı, imza dosyaları ve ileride yüklenecek belgeler burada tutulur.
+          </p>
+
+          <div style={styles.filePreview}>
+            <strong>Sesli kabul dosyası</strong>
+            <p>Başvuru sırasında söylediğiniz “kabul ettim” ses kaydı burada görünecek.</p>
+          </div>
+
+          <button style={styles.smallButton}>Dosyalarımı Gör</button>
+        </div>
+
+        <div style={styles.studioActiveCard}>
+          <div style={styles.heroBadgeGreen}>Stüdyo Açık</div>
+          <h2>Stüdyoya Git</h2>
+          <p style={styles.muted}>
+            Yayıncı paneline erişiminiz aktif. Stüdyo Dashboard, Havuz, Gelirler ve Yayıncı Profil Ayarları ekranlarına geçebilirsiniz.
+          </p>
+
+          <button onClick={goStudio} style={styles.linkGreenButton}>
+            Stüdyo Dashboard’a Git
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section style={styles.publisherStudioGrid}>
+      <div style={styles.publisherApplyCard}>
+        <div style={styles.heroBadge}>Başvuru</div>
+        <h2>Yayıncı Olarak Başvur</h2>
+        <p style={styles.muted}>
+          Yayıncı başvurusu admin panelinde incelenir. Sözleşme metnini kabul edip sesli onay vermeden başvuru gönderilemez.
+        </p>
+
+        <div style={styles.formGrid}>
+          <div>
+            <label style={styles.label}>Ad Soyad *</label>
+            <input
+              value={form.fullName}
+              onChange={(e) => updateField("fullName", e.target.value)}
+              style={styles.input}
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>E-posta *</label>
+            <input
+              value={form.email}
+              onChange={(e) => updateField("email", e.target.value)}
+              style={styles.input}
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>Telefon</label>
+            <input
+              value={form.phone}
+              onChange={(e) => updateField("phone", e.target.value)}
+              placeholder="Telefon"
+              style={styles.input}
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>Website</label>
+            <input
+              value={form.website}
+              onChange={(e) => updateField("website", e.target.value)}
+              placeholder="https://..."
+              style={styles.input}
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>Instagram</label>
+            <input
+              value={form.instagram}
+              onChange={(e) => updateField("instagram", e.target.value)}
+              placeholder="@kullanici"
+              style={styles.input}
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>Twitter / X</label>
+            <input
+              value={form.twitter}
+              onChange={(e) => updateField("twitter", e.target.value)}
+              placeholder="@kullanici"
+              style={styles.input}
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>YouTube / Kanal</label>
+            <input
+              value={form.youtube}
+              onChange={(e) => updateField("youtube", e.target.value)}
+              placeholder="Kanal linki"
+              style={styles.input}
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>Yayıncılık Deneyimi</label>
+            <select
+              value={form.hasExperience}
+              onChange={(e) => updateField("hasExperience", e.target.value)}
+              style={styles.input}
+            >
+              <option value="">Seçiniz</option>
+              <option value="var">Var</option>
+              <option value="yok">Yok</option>
+            </select>
+          </div>
+        </div>
+
+        <label style={styles.label}>Deneyim Açıklaması</label>
+        <textarea
+          value={form.experience}
+          onChange={(e) => updateField("experience", e.target.value)}
+          placeholder="Yayıncılık, editörlük, ilmi çalışma veya moderasyon deneyiminizi yazın."
+          style={styles.textarea}
+        />
+
+        <label style={styles.label}>Başvuru Sebebi *</label>
+        <textarea
+          value={form.reason}
+          onChange={(e) => updateField("reason", e.target.value)}
+          placeholder="Neden Kevser Yayın Evi'nde yayıncı olmak istiyorsunuz?"
+          style={styles.textarea}
+        />
+
+        <div style={styles.agreementBox}>
+          <label style={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={agreementAccepted}
+              onChange={() => setAgreementOpen(true)}
+            />
+            Kevser Yayın Evi platform anlaşma metnini okuyup kabul ediyorum.
+          </label>
+
+          <button style={styles.textButton} onClick={() => setAgreementOpen(true)}>
+            Anlaşma metnini aç
+          </button>
+        </div>
+
+        <div style={styles.voiceBox}>
+          <h3>Sesli Kabul</h3>
+          <p style={styles.muted}>
+            Kullanıcı sözleşmeyi kabul etmek için mikrofonla “kabul ettim” diyecek veya MP3 dosyası yükleyecek.
+          </p>
+
+          <div style={styles.actionRow}>
+            <button
+              style={styles.smallButton}
+              onClick={() => {
+                setVoiceAccepted(true);
+                setVoiceFileName("Mikrofon ile kabul edildi");
+              }}
+            >
+              🎤 Mikrofonla Kabul Ettim
+            </button>
+
+            <label style={styles.uploadButton}>
+              MP3 Yükle
+              <input
+                type="file"
+                accept="audio/mpeg,audio/mp3,audio/*"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+
+                  if (file) {
+                    setVoiceAccepted(true);
+                    setVoiceFileName(file.name);
+                  }
+                }}
+              />
+            </label>
+          </div>
+
+          {voiceAccepted && (
+            <div style={styles.successBox}>
+              Sesli kabul alındı: {voiceFileName}
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={submitPublisherApplication}
+          disabled={applicationLoading}
+          style={styles.primaryButton}
+        >
+          {applicationLoading ? "Başvuru Gönderiliyor..." : "Başvuruyu Gönder"}
+        </button>
+
+        {applicationMessage && (
+          <div style={styles.notice}>{applicationMessage}</div>
+        )}
+      </div>
+
+      <div style={styles.studioDisabledCard}>
+        <div style={styles.heroBadgeDisabled}>Stüdyo Kapalı</div>
+        <h2>Stüdyoya Git</h2>
+        <p style={styles.muted}>
+          Yayıncı paneli yalnızca admin tarafından yayıncı olarak kabul edilen kullanıcılar için açılır.
+        </p>
+
+        <button onClick={goStudio} style={styles.disabledButton}>
+          Stüdyoya Git
+        </button>
+      </div>
+
+      {agreementOpen && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <h2>Kevser Yayın Evi Platform Anlaşması</h2>
+            <p style={styles.muted}>
+              Bu metin ileride admin panelinden düzenlenecek.
+            </p>
+
+            <div style={styles.agreementText}>
+              {agreementText}
+            </div>
+
+            <div style={styles.actionRow}>
+              <button
+                style={styles.primaryButton}
+                onClick={() => {
+                  setAgreementAccepted(true);
+                  setAgreementOpen(false);
+                }}
+              >
+                Okudum ve Kabul Ediyorum
+              </button>
+
+              <button
+                style={styles.smallButton}
+                onClick={() => {
+                  setAgreementAccepted(false);
+                  setAgreementOpen(false);
+                }}
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -573,6 +906,12 @@ const styles = {
   container: {
     maxWidth: "1350px",
     margin: "0 auto",
+  },
+  card: {
+    border: "1px solid #333",
+    borderRadius: "24px",
+    padding: "24px",
+    background: "#111",
   },
   header: {
     border: "1px solid #333",
@@ -842,14 +1181,37 @@ const styles = {
     fontSize: "12px",
     fontWeight: "bold",
   },
+  heroBadgeDisabled: {
+    display: "inline-block",
+    background: "#444",
+    color: "#aaa",
+    borderRadius: "999px",
+    padding: "6px 10px",
+    fontSize: "12px",
+    fontWeight: "bold",
+  },
   input: {
     width: "100%",
-    marginTop: "12px",
+    marginTop: "8px",
+    marginBottom: "12px",
     padding: "14px",
     borderRadius: "12px",
     border: "1px solid #333",
     background: "black",
     color: "white",
+    boxSizing: "border-box",
+  },
+  textarea: {
+    width: "100%",
+    minHeight: "110px",
+    marginTop: "8px",
+    marginBottom: "12px",
+    padding: "14px",
+    borderRadius: "12px",
+    border: "1px solid #333",
+    background: "black",
+    color: "white",
+    boxSizing: "border-box",
   },
   primaryButton: {
     marginTop: "16px",
@@ -936,6 +1298,24 @@ const styles = {
     padding: "11px 14px",
     fontWeight: "bold",
   },
+  linkGreenButton: {
+    background: "#166534",
+    color: "white",
+    border: "none",
+    borderRadius: "12px",
+    padding: "12px 16px",
+    fontWeight: "bold",
+    cursor: "pointer",
+  },
+  disabledButton: {
+    background: "#333",
+    color: "#999",
+    border: "1px solid #444",
+    borderRadius: "12px",
+    padding: "12px 16px",
+    fontWeight: "bold",
+    cursor: "not-allowed",
+  },
   notice: {
     border: "1px solid #333",
     borderRadius: "14px",
@@ -961,21 +1341,110 @@ const styles = {
     fontWeight: "bold",
     marginBottom: "8px",
   },
-  publisherGrid: {
+  publisherStudioGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "18px",
+    gridTemplateColumns: "1.35fr 0.65fr",
+    gap: "20px",
+    alignItems: "start",
   },
-  publisherCard: {
+  publisherApplyCard: {
     border: "1px solid rgba(245,180,0,0.35)",
     borderRadius: "24px",
     padding: "24px",
     background: "rgba(245,180,0,0.08)",
   },
-  publisherCardActive: {
+  studioDisabledCard: {
+    border: "1px solid #333",
+    borderRadius: "24px",
+    padding: "24px",
+    background: "#070707",
+    opacity: 0.8,
+  },
+  studioActiveCard: {
     border: "1px solid rgba(34,197,94,0.35)",
     borderRadius: "24px",
     padding: "24px",
     background: "rgba(34,197,94,0.08)",
+  },
+  permanentFilesCard: {
+    border: "1px solid rgba(34,197,94,0.35)",
+    borderRadius: "24px",
+    padding: "24px",
+    background: "rgba(34,197,94,0.08)",
+  },
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "12px",
+  },
+  agreementBox: {
+    border: "1px solid #333",
+    borderRadius: "16px",
+    padding: "14px",
+    background: "black",
+    marginTop: "12px",
+  },
+  checkboxLabel: {
+    display: "block",
+    color: "#ddd",
+    lineHeight: "1.6",
+  },
+  textButton: {
+    marginTop: "10px",
+    background: "transparent",
+    border: "none",
+    color: "#60a5fa",
+    textDecoration: "underline",
+    cursor: "pointer",
+  },
+  voiceBox: {
+    border: "1px solid #333",
+    borderRadius: "16px",
+    padding: "14px",
+    background: "black",
+    marginTop: "12px",
+  },
+  uploadButton: {
+    border: "1px solid #333",
+    background: "#1f1f1f",
+    color: "white",
+    borderRadius: "10px",
+    padding: "8px 10px",
+    cursor: "pointer",
+    display: "inline-block",
+  },
+  filePreview: {
+    border: "1px solid #333",
+    background: "black",
+    borderRadius: "16px",
+    padding: "16px",
+    marginTop: "14px",
+    marginBottom: "14px",
+  },
+  modal: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.82)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 9999,
+    padding: "20px",
+  },
+  modalContent: {
+    maxWidth: "680px",
+    width: "100%",
+    background: "#111",
+    border: "1px solid #333",
+    borderRadius: "24px",
+    padding: "24px",
+  },
+  agreementText: {
+    border: "1px solid #333",
+    borderRadius: "16px",
+    padding: "18px",
+    background: "black",
+    color: "#f5b400",
+    marginTop: "14px",
   },
 };
