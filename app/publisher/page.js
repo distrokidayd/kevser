@@ -1,228 +1,186 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-export default function PublisherPanel() {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [reports, setReports] = useState([]);
+export default function PublishersPage() {
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    penName: "",
+    religion: "",
+    denomination: "",
+    experience: "",
+    reason: "",
+  });
+
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const loadReports = async () => {
+  const updateField = (field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const submitApplication = async () => {
     try {
       setLoading(true);
+      setMessage("");
 
-      const res = await fetch("/api/get-reports");
+      const res = await fetch("/api/create-publisher-application", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
       const data = await res.json();
 
-      if (data.success) {
-        setReports(data.reports || []);
+      if (!data.success) {
+        setMessage(data.error || "Başvuru gönderilemedi.");
+        return;
       }
+
+      setMessage("Yayıncı başvurunuz başarıyla gönderildi.");
+      setForm({
+        fullName: "",
+        email: "",
+        phone: "",
+        address: "",
+        penName: "",
+        religion: "",
+        denomination: "",
+        experience: "",
+        reason: "",
+      });
     } catch (error) {
-      console.error("Şikayetler alınamadı:", error);
+      console.error("Başvuru hatası:", error);
+      setMessage("Başvuru gönderilirken hata oluştu.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadReports();
-  }, []);
-
-  const voteReport = async (reportId, decision) => {
-    try {
-      await fetch("/api/vote-report", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          reportId,
-          decision,
-        }),
-      });
-
-      await loadReports();
-    } catch (error) {
-      console.error("Oy gönderilemedi:", error);
-    }
-  };
-
   return (
     <main style={styles.page}>
-      <section style={styles.header}>
-        <div>
-          <p style={styles.smallTitle}>Kevser Yayın Evi</p>
-          <h1 style={styles.title}>Yayıncı Paneli</h1>
-          <p style={styles.subtitle}>
-            Yayıncı yönetimi, şikayet havuzu, gelir takibi ve profil ayarları
-          </p>
+      <section style={styles.hero}>
+        <p style={styles.eyebrow}>Kevser Yayın Evi</p>
+        <h1 style={styles.title}>Yayıncı Başvurusu</h1>
+        <p style={styles.subtitle}>
+          Kevser platformunda şerh, yorum, tartışma ve moderasyon süreçlerinde
+          görev almak için yayıncı başvurusu yapabilirsiniz.
+        </p>
+      </section>
+
+      <section style={styles.card}>
+        <h2 style={styles.sectionTitle}>Başvuru Formu</h2>
+
+        <div style={styles.grid}>
+          <div>
+            <label style={styles.label}>Ad Soyad *</label>
+            <input
+              style={styles.input}
+              value={form.fullName}
+              onChange={(e) => updateField("fullName", e.target.value)}
+              placeholder="Adınızı ve soyadınızı yazın"
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>E-posta *</label>
+            <input
+              style={styles.input}
+              value={form.email}
+              onChange={(e) => updateField("email", e.target.value)}
+              placeholder="ornek@mail.com"
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>Telefon</label>
+            <input
+              style={styles.input}
+              value={form.phone}
+              onChange={(e) => updateField("phone", e.target.value)}
+              placeholder="Telefon numarası"
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>Müstear İsim</label>
+            <input
+              style={styles.input}
+              value={form.penName}
+              onChange={(e) => updateField("penName", e.target.value)}
+              placeholder="Varsa müstear isminiz"
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>Dini Seçim</label>
+            <input
+              style={styles.input}
+              value={form.religion}
+              onChange={(e) => updateField("religion", e.target.value)}
+              placeholder="Örn: İslam"
+            />
+          </div>
+
+          <div>
+            <label style={styles.label}>Mezhep</label>
+            <input
+              style={styles.input}
+              value={form.denomination}
+              onChange={(e) => updateField("denomination", e.target.value)}
+              placeholder="Örn: Hanefi"
+            />
+          </div>
         </div>
+
+        <div style={styles.fullField}>
+          <label style={styles.label}>Adres</label>
+          <textarea
+            style={styles.textarea}
+            value={form.address}
+            onChange={(e) => updateField("address", e.target.value)}
+            placeholder="Adres bilginizi yazın"
+          />
+        </div>
+
+        <div style={styles.fullField}>
+          <label style={styles.label}>Tecrübe</label>
+          <textarea
+            style={styles.textarea}
+            value={form.experience}
+            onChange={(e) => updateField("experience", e.target.value)}
+            placeholder="Yayıncılık, editörlük, ilmi çalışma veya moderasyon tecrübenizi yazın"
+          />
+        </div>
+
+        <div style={styles.fullField}>
+          <label style={styles.label}>Başvuru Sebebi *</label>
+          <textarea
+            style={styles.textareaLarge}
+            value={form.reason}
+            onChange={(e) => updateField("reason", e.target.value)}
+            placeholder="Neden Kevser Yayın Evi'nde yayıncı olmak istiyorsunuz?"
+          />
+        </div>
+
+        <button
+          style={styles.primaryButton}
+          onClick={submitApplication}
+          disabled={loading}
+        >
+          {loading ? "Başvuru Gönderiliyor..." : "Yayıncı Başvurusu Gönder"}
+        </button>
+
+        {message && <p style={styles.message}>{message}</p>}
       </section>
-
-      <section style={styles.tabs}>
-        <button
-          style={activeTab === "dashboard" ? styles.activeTab : styles.tab}
-          onClick={() => setActiveTab("dashboard")}
-        >
-          Stüdyo Dashboard
-        </button>
-
-        <button
-          style={activeTab === "havuz" ? styles.activeTab : styles.tab}
-          onClick={() => {
-            setActiveTab("havuz");
-            loadReports();
-          }}
-        >
-          Havuz
-        </button>
-
-        <button
-          style={activeTab === "gelirler" ? styles.activeTab : styles.tab}
-          onClick={() => setActiveTab("gelirler")}
-        >
-          Gelirler
-        </button>
-
-        <button
-          style={activeTab === "profil" ? styles.activeTab : styles.tab}
-          onClick={() => setActiveTab("profil")}
-        >
-          Yayıncı Profil Ayarları
-        </button>
-      </section>
-
-      {activeTab === "dashboard" && (
-        <section style={styles.card}>
-          <h2 style={styles.sectionTitle}>Stüdyo Dashboard</h2>
-
-          <div style={styles.grid}>
-            <div style={styles.infoBox}>
-              <h3>Traditional Eser Havuzu</h3>
-              <p>Telifsiz eserler bu havuzda yönetilecek.</p>
-            </div>
-
-            <div style={styles.infoBox}>
-              <h3>Telifli Eser Havuzu</h3>
-              <p>Telifli eser başvuruları ve süreçleri burada takip edilecek.</p>
-            </div>
-
-            <div style={styles.infoBox}>
-              <h3>Dil Seçimi</h3>
-              <p>Yayıncılar çalışma dili ve çeviri alanlarını buradan seçecek.</p>
-            </div>
-
-            <div style={styles.infoBox}>
-              <h3>Süre Sistemi</h3>
-              <p>15 gün çalışma süresi + 5 gün uzatma mantığı burada işleyecek.</p>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {activeTab === "havuz" && (
-        <section style={styles.card}>
-          <div style={styles.sectionHeader}>
-            <div>
-              <h2 style={styles.sectionTitle}>Şikayet Havuzu</h2>
-              <p style={styles.sectionDesc}>
-                Kullanıcılardan gelen şikayetler burada yayıncı kararına sunulur.
-              </p>
-            </div>
-
-            <button style={styles.refreshButton} onClick={loadReports}>
-              Yenile
-            </button>
-          </div>
-
-          {loading && <p style={styles.emptyText}>Şikayetler yükleniyor...</p>}
-
-          {!loading && reports.length === 0 && (
-            <p style={styles.emptyText}>Şu anda bekleyen şikayet yok.</p>
-          )}
-
-          <div style={styles.reportList}>
-            {reports.map((report) => (
-              <div key={report.id} style={styles.reportCard}>
-                <div style={styles.reportTop}>
-                  <span style={styles.badge}>Bekleyen Şikayet</span>
-                  <span style={styles.status}>{report.status || "pending"}</span>
-                </div>
-
-                <p>
-                  <strong>İçerik ID:</strong>{" "}
-                  {report.content_id || "Belirtilmemiş"}
-                </p>
-
-                <p>
-                  <strong>Şikayet Sebebi:</strong>{" "}
-                  {report.reason || "Sebep girilmemiş"}
-                </p>
-
-                <p>
-                  <strong>Oluşturulma:</strong>{" "}
-                  {report.created_at
-                    ? new Date(report.created_at).toLocaleString("tr-TR")
-                    : "Tarih yok"}
-                </p>
-
-                <div style={styles.actions}>
-                  <button
-                    style={styles.approveButton}
-                    onClick={() => voteReport(report.id, "approve")}
-                  >
-                    Şikayeti Onayla
-                  </button>
-
-                  <button
-                    style={styles.rejectButton}
-                    onClick={() => voteReport(report.id, "reject")}
-                  >
-                    Şikayeti Reddet
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {activeTab === "gelirler" && (
-        <section style={styles.card}>
-          <h2 style={styles.sectionTitle}>Gelirler</h2>
-
-          <div style={styles.infoBox}>
-            <h3>Gelir Sistemi</h3>
-            <p>
-              Yorumlu baskılardan elde edilen gelirin 5&apos;te 1&apos;i katkı
-              havuzuna aktarılacak. Yayıncılara puan sistemine göre dağıtılacak.
-            </p>
-          </div>
-        </section>
-      )}
-
-      {activeTab === "profil" && (
-        <section style={styles.card}>
-          <h2 style={styles.sectionTitle}>Yayıncı Profil Ayarları</h2>
-
-          <div style={styles.grid}>
-            <div style={styles.infoBox}>
-              <h3>Kullanıcı Bilgileri</h3>
-              <p>Ad, mail, telefon ve adres bilgileri burada düzenlenecek.</p>
-            </div>
-
-            <div style={styles.infoBox}>
-              <h3>Müstear İsim</h3>
-              <p>Yayıncı isterse müstear isimle görünebilecek.</p>
-            </div>
-
-            <div style={styles.infoBox}>
-              <h3>Dini Seçim ve Mezhep</h3>
-              <p>Bu alan en fazla 2 kez değiştirilebilecek.</p>
-            </div>
-          </div>
-        </section>
-      )}
     </main>
   );
 }
@@ -235,49 +193,29 @@ const styles = {
     color: "#2d2418",
     fontFamily: "Arial, sans-serif",
   },
-  header: {
+  hero: {
     background: "#3b2f20",
     color: "#fff",
-    padding: "28px",
-    borderRadius: "18px",
-    marginBottom: "20px",
+    padding: "32px",
+    borderRadius: "20px",
+    marginBottom: "24px",
   },
-  smallTitle: {
+  eyebrow: {
     margin: 0,
     color: "#d8b46a",
     fontSize: "14px",
+    letterSpacing: "2px",
+    textTransform: "uppercase",
   },
   title: {
-    margin: "8px 0",
-    fontSize: "34px",
+    margin: "10px 0",
+    fontSize: "38px",
   },
   subtitle: {
     margin: 0,
     color: "#eee2cf",
-  },
-  tabs: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "10px",
-    marginBottom: "20px",
-  },
-  tab: {
-    padding: "12px 16px",
-    borderRadius: "12px",
-    border: "1px solid #d8c7aa",
-    background: "#fff",
-    cursor: "pointer",
-    color: "#3b2f20",
-    fontWeight: "600",
-  },
-  activeTab: {
-    padding: "12px 16px",
-    borderRadius: "12px",
-    border: "1px solid #3b2f20",
-    background: "#3b2f20",
-    cursor: "pointer",
-    color: "#fff",
-    fontWeight: "700",
+    maxWidth: "760px",
+    lineHeight: "1.7",
   },
   card: {
     background: "#fffaf2",
@@ -286,101 +224,70 @@ const styles = {
     padding: "24px",
     boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
   },
-  sectionHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "16px",
-    alignItems: "center",
-    marginBottom: "18px",
-  },
   sectionTitle: {
-    margin: 0,
+    margin: "0 0 20px 0",
     fontSize: "26px",
-    color: "#2d2418",
-  },
-  sectionDesc: {
-    marginTop: "6px",
-    color: "#6f604c",
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
     gap: "16px",
   },
-  infoBox: {
-    background: "#fff",
-    border: "1px solid #e5d6bd",
-    borderRadius: "14px",
-    padding: "18px",
+  fullField: {
+    marginTop: "16px",
   },
-  refreshButton: {
-    padding: "10px 14px",
+  label: {
+    display: "block",
+    fontWeight: "700",
+    marginBottom: "8px",
+  },
+  input: {
+    width: "100%",
+    padding: "12px",
     borderRadius: "10px",
+    border: "1px solid #d8c7aa",
+    fontSize: "15px",
+    boxSizing: "border-box",
+    background: "#fff",
+  },
+  textarea: {
+    width: "100%",
+    minHeight: "90px",
+    padding: "12px",
+    borderRadius: "10px",
+    border: "1px solid #d8c7aa",
+    fontSize: "15px",
+    boxSizing: "border-box",
+    background: "#fff",
+  },
+  textareaLarge: {
+    width: "100%",
+    minHeight: "140px",
+    padding: "12px",
+    borderRadius: "10px",
+    border: "1px solid #d8c7aa",
+    fontSize: "15px",
+    boxSizing: "border-box",
+    background: "#fff",
+  },
+  primaryButton: {
+    marginTop: "18px",
+    width: "100%",
+    padding: "14px 18px",
+    borderRadius: "12px",
     border: "none",
-    background: "#8b5e2b",
+    background: "#3b2f20",
     color: "#fff",
     cursor: "pointer",
     fontWeight: "700",
+    fontSize: "16px",
   },
-  emptyText: {
+  message: {
+    marginTop: "14px",
     background: "#fff",
     border: "1px dashed #c9b28c",
     borderRadius: "12px",
-    padding: "18px",
+    padding: "14px",
     color: "#6f604c",
-  },
-  reportList: {
-    display: "grid",
-    gap: "14px",
-  },
-  reportCard: {
-    background: "#fff",
-    border: "1px solid #e0ccb0",
-    borderRadius: "16px",
-    padding: "18px",
-  },
-  reportTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginBottom: "12px",
-  },
-  badge: {
-    background: "#fff0d6",
-    color: "#7a4d12",
-    padding: "6px 10px",
-    borderRadius: "999px",
-    fontSize: "13px",
-    fontWeight: "700",
-  },
-  status: {
-    background: "#eee",
-    color: "#333",
-    padding: "6px 10px",
-    borderRadius: "999px",
-    fontSize: "13px",
-  },
-  actions: {
-    display: "flex",
-    gap: "10px",
-    marginTop: "14px",
-    flexWrap: "wrap",
-  },
-  approveButton: {
-    padding: "10px 14px",
-    borderRadius: "10px",
-    border: "none",
-    background: "#2f7d46",
-    color: "#fff",
-    cursor: "pointer",
-    fontWeight: "700",
-  },
-  rejectButton: {
-    padding: "10px 14px",
-    borderRadius: "10px",
-    border: "none",
-    background: "#9b2f2f",
-    color: "#fff",
-    cursor: "pointer",
-    fontWeight: "700",
   },
 };
