@@ -4,6 +4,48 @@ import { useState } from "react";
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [bookId, setBookId] = useState("");
+  const [sealCode, setSealCode] = useState("");
+  const [sealLoading, setSealLoading] = useState(false);
+  const [sealMessage, setSealMessage] = useState("");
+
+  const createSealCode = async () => {
+    try {
+      setSealLoading(true);
+      setSealMessage("");
+      setSealCode("");
+
+      if (!bookId.trim()) {
+        setSealMessage("Lütfen kitap ID gir.");
+        return;
+      }
+
+      const res = await fetch("/api/admin/create-seal", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          bookId: bookId.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setSealMessage(data.error || "Mühür kodu oluşturulamadı.");
+        return;
+      }
+
+      setSealCode(data.code || "");
+      setSealMessage("Mühür kodu başarıyla oluşturuldu.");
+    } catch (error) {
+      console.error("Mühür kodu hatası:", error);
+      setSealMessage("Mühür kodu oluşturulurken hata oluştu.");
+    } finally {
+      setSealLoading(false);
+    }
+  };
 
   return (
     <main style={styles.page}>
@@ -24,7 +66,9 @@ export default function AdminPanel() {
         </button>
 
         <button
-          style={activeTab === "publisherApplications" ? styles.activeTab : styles.tab}
+          style={
+            activeTab === "publisherApplications" ? styles.activeTab : styles.tab
+          }
           onClick={() => setActiveTab("publisherApplications")}
         >
           Yayıncı Başvuruları
@@ -71,17 +115,23 @@ export default function AdminPanel() {
 
             <div style={styles.infoBox}>
               <h3>Yayıncı Yönetimi</h3>
-              <p>Yayıncı başvuruları ve yetkilendirmeler burada kontrol edilecek.</p>
+              <p>
+                Yayıncı başvuruları ve yetkilendirmeler burada kontrol edilecek.
+              </p>
             </div>
 
             <div style={styles.infoBox}>
               <h3>Moderasyon</h3>
-              <p>Şikayetler, askıya alınan içerikler ve itirazlar burada izlenecek.</p>
+              <p>
+                Şikayetler, askıya alınan içerikler ve itirazlar burada izlenecek.
+              </p>
             </div>
 
             <div style={styles.infoBox}>
               <h3>Kitap Sistemi</h3>
-              <p>Kitaplar, mühür kodları ve kullanıcı kitap erişimleri yönetilecek.</p>
+              <p>
+                Kitaplar, mühür kodları ve kullanıcı kitap erişimleri yönetilecek.
+              </p>
             </div>
           </div>
         </section>
@@ -100,7 +150,8 @@ export default function AdminPanel() {
         <section style={styles.card}>
           <h2 style={styles.sectionTitle}>Şikayet Havuzu</h2>
           <p style={styles.emptyText}>
-            Yayıncı havuzundan gelen şikayet kayıtları burada admin tarafından izlenecek.
+            Yayıncı havuzundan gelen şikayet kayıtları burada admin tarafından
+            izlenecek.
           </p>
         </section>
       )}
@@ -109,7 +160,8 @@ export default function AdminPanel() {
         <section style={styles.card}>
           <h2 style={styles.sectionTitle}>İtirazlar</h2>
           <p style={styles.emptyText}>
-            Askıya alınan içeriklere gelen kullanıcı itirazları burada nihai karara bağlanacak.
+            Askıya alınan içeriklere gelen kullanıcı itirazları burada nihai
+            karara bağlanacak.
           </p>
         </section>
       )}
@@ -127,13 +179,32 @@ export default function AdminPanel() {
         <section style={styles.card}>
           <h2 style={styles.sectionTitle}>Mühür Kodu</h2>
 
-          <div style={styles.infoBox}>
-            <h3>Mühür Kodu Üretimi</h3>
-            <p>
-              Admin burada kitaplara özel mühür kodu üretecek. Bu bölüm mevcut
-              <strong> app/api/admin/create-seal/route.js </strong>
-              API’sine bağlanacak.
-            </p>
+          <div style={styles.formBox}>
+            <label style={styles.label}>Kitap ID</label>
+
+            <input
+              style={styles.input}
+              value={bookId}
+              onChange={(e) => setBookId(e.target.value)}
+              placeholder="Örn: omerhayyam-rubailer"
+            />
+
+            <button
+              style={styles.primaryButton}
+              onClick={createSealCode}
+              disabled={sealLoading}
+            >
+              {sealLoading ? "Oluşturuluyor..." : "Mühür Kodu Oluştur"}
+            </button>
+
+            {sealMessage && <p style={styles.message}>{sealMessage}</p>}
+
+            {sealCode && (
+              <div style={styles.sealResult}>
+                <p style={styles.sealLabel}>Oluşturulan Mühür Kodu</p>
+                <strong style={styles.sealCode}>{sealCode}</strong>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -222,5 +293,58 @@ const styles = {
     borderRadius: "12px",
     padding: "18px",
     color: "#6f604c",
+  },
+  formBox: {
+    maxWidth: "460px",
+    background: "#fff",
+    border: "1px solid #e5d6bd",
+    borderRadius: "14px",
+    padding: "20px",
+  },
+  label: {
+    display: "block",
+    fontWeight: "700",
+    marginBottom: "8px",
+  },
+  input: {
+    width: "100%",
+    padding: "12px",
+    borderRadius: "10px",
+    border: "1px solid #d8c7aa",
+    marginBottom: "12px",
+    fontSize: "15px",
+    boxSizing: "border-box",
+  },
+  primaryButton: {
+    width: "100%",
+    padding: "12px 16px",
+    borderRadius: "10px",
+    border: "none",
+    background: "#24180f",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: "700",
+    fontSize: "15px",
+  },
+  message: {
+    marginTop: "12px",
+    color: "#6f604c",
+  },
+  sealResult: {
+    marginTop: "16px",
+    padding: "16px",
+    borderRadius: "12px",
+    background: "#f6f1e8",
+    border: "1px dashed #bfa36f",
+  },
+  sealLabel: {
+    margin: "0 0 8px 0",
+    color: "#6f604c",
+    fontSize: "14px",
+  },
+  sealCode: {
+    fontSize: "24px",
+    letterSpacing: "2px",
+    color: "#24180f",
   },
 };
