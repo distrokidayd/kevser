@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState("dashboard");
+
   const [reports, setReports] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(false);
+
+  const [appeals, setAppeals] = useState([]);
+  const [appealsLoading, setAppealsLoading] = useState(false);
 
   const [bookId, setBookId] = useState("");
   const [sealCode, setSealCode] = useState("");
@@ -15,13 +19,9 @@ export default function AdminPanel() {
   const loadReports = async () => {
     try {
       setReportsLoading(true);
-
       const res = await fetch("/api/get-reports");
       const data = await res.json();
-
-      if (data.success) {
-        setReports(data.reports || []);
-      }
+      if (data.success) setReports(data.reports || []);
     } catch (error) {
       console.error("Admin şikayetleri alınamadı:", error);
     } finally {
@@ -29,8 +29,22 @@ export default function AdminPanel() {
     }
   };
 
+  const loadAppeals = async () => {
+    try {
+      setAppealsLoading(true);
+      const res = await fetch("/api/admin/get-appeals");
+      const data = await res.json();
+      if (data.success) setAppeals(data.appeals || []);
+    } catch (error) {
+      console.error("Admin itirazları alınamadı:", error);
+    } finally {
+      setAppealsLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadReports();
+    loadAppeals();
   }, []);
 
   const resolveReport = async (reportId, action) => {
@@ -40,10 +54,7 @@ export default function AdminPanel() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          reportId,
-          action
-        })
+        body: JSON.stringify({ reportId, action })
       });
 
       const data = await res.json();
@@ -55,6 +66,7 @@ export default function AdminPanel() {
 
       alert("Admin kararı kaydedildi.");
       await loadReports();
+      await loadAppeals();
     } catch (error) {
       console.error("Admin karar hatası:", error);
       alert("Admin kararı verilirken hata oluştu.");
@@ -145,7 +157,10 @@ export default function AdminPanel() {
 
         <button
           style={activeTab === "appeals" ? styles.activeTab : styles.tab}
-          onClick={() => setActiveTab("appeals")}
+          onClick={() => {
+            setActiveTab("appeals");
+            loadAppeals();
+          }}
         >
           İtirazlar
         </button>
@@ -326,11 +341,88 @@ export default function AdminPanel() {
 
       {activeTab === "appeals" && (
         <section style={styles.card}>
-          <h2 style={styles.sectionTitle}>İtirazlar</h2>
-          <p style={styles.emptyText}>
-            Askıya alınan içeriklere gelen kullanıcı itirazları burada nihai
-            karara bağlanacak.
-          </p>
+          <div style={styles.sectionHeader}>
+            <div>
+              <h2 style={styles.sectionTitle}>İtirazlar</h2>
+              <p style={styles.sectionDesc}>
+                Askıya alınan içeriklere gelen kullanıcı itirazları burada
+                nihai karara bağlanır.
+              </p>
+            </div>
+
+            <button style={styles.refreshButton} onClick={loadAppeals}>
+              Yenile
+            </button>
+          </div>
+
+          {appealsLoading && (
+            <p style={styles.emptyText}>İtirazlar yükleniyor...</p>
+          )}
+
+          {!appealsLoading && appeals.length === 0 && (
+            <p style={styles.emptyText}>Henüz itiraz yok.</p>
+          )}
+
+          <div style={styles.reportList}>
+            {appeals.map((appeal) => (
+              <div key={appeal.id} style={styles.reportCard}>
+                <div style={styles.reportTop}>
+                  <span style={styles.badge}>Kullanıcı İtirazı</span>
+                  <span style={styles.status}>{appeal.status || "pending"}</span>
+                </div>
+
+                <p>
+                  <strong>İtiraz ID:</strong> {appeal.id}
+                </p>
+
+                <p>
+                  <strong>Report ID:</strong>{" "}
+                  {appeal.report_id || "Belirtilmemiş"}
+                </p>
+
+                <p>
+                  <strong>Contribution ID:</strong>{" "}
+                  {appeal.contribution_id || "Belirtilmemiş"}
+                </p>
+
+                <p>
+                  <strong>Kullanıcı:</strong> {appeal.user_id || "Bilinmiyor"}
+                </p>
+
+                <p>
+                  <strong>İtiraz Sebebi:</strong>{" "}
+                  {appeal.reason || "Sebep girilmemiş"}
+                </p>
+
+                <p>
+                  <strong>Oluşturulma:</strong>{" "}
+                  {appeal.created_at
+                    ? new Date(appeal.created_at).toLocaleString("tr-TR")
+                    : "Tarih yok"}
+                </p>
+
+                <div style={styles.adminActions}>
+                  <button
+                    style={styles.keepSuspendedButton}
+                    onClick={() =>
+                      alert("Sonraki adımda: İtirazı reddet API bağlanacak.")
+                    }
+                  >
+                    İtirazı Reddet
+                  </button>
+
+                  <button
+                    style={styles.restoreButton}
+                    onClick={() =>
+                      alert("Sonraki adımda: İtirazı kabul et API bağlanacak.")
+                    }
+                  >
+                    İtirazı Kabul Et
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
