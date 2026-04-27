@@ -12,7 +12,7 @@ export default function ProfilePage() {
   const [expandedBox, setExpandedBox] = useState(null);
 
   async function addBook() {
-    if (!sealCode) return;
+    if (!sealCode.trim()) return;
 
     setLoading(true);
     setResult(null);
@@ -36,14 +36,14 @@ export default function ProfilePage() {
   if (!isSignedIn) {
     return (
       <main style={styles.page}>
-        <div style={styles.container}>
+        <section style={styles.container}>
           <div style={styles.card}>
             <h1>Giriş yapmanız gerekiyor</h1>
             <p style={styles.muted}>
-              Profil sayfanızı görmek için giriş yapmalısınız.
+              Profil, mesajlar ve kitap ekleme alanını kullanmak için giriş yapmalısınız.
             </p>
           </div>
-        </div>
+        </section>
       </main>
     );
   }
@@ -52,7 +52,7 @@ export default function ProfilePage() {
     {
       id: 1,
       to: "@kitap_dostu",
-      text: "Rubailer üzerine başlattığın yorumu okudum, çok güzel bir noktaya değinmişsin.",
+      text: "Rubailer üzerine başlattığın yorumu okudum. Çok güzel bir noktaya değinmişsin.",
       time: "Bugün 14:30"
     },
     {
@@ -117,6 +117,7 @@ export default function ProfilePage() {
   return (
     <main style={styles.page}>
       <section style={styles.container}>
+
         <header style={styles.header}>
           <div>
             <div style={styles.eyebrow}>Kevser Profile</div>
@@ -124,7 +125,7 @@ export default function ProfilePage() {
               Hoş geldin {user?.firstName || user?.username || "Kevser Üyesi"}
             </h1>
             <p style={styles.muted}>
-              Kitapların, katkıların, mesajların ve bildirimlerin burada toplanır.
+              Kitapların, mesajların, bildirimlerin ve katkıların burada toplanır.
             </p>
           </div>
 
@@ -132,6 +133,7 @@ export default function ProfilePage() {
             <div style={styles.avatar}>
               {(user?.firstName?.[0] || user?.username?.[0] || "K").toUpperCase()}
             </div>
+
             <div>
               <div style={styles.username}>
                 {user?.username || user?.primaryEmailAddress?.emailAddress || "Kullanıcı"}
@@ -176,14 +178,17 @@ export default function ProfilePage() {
 
           <div style={styles.card}>
             <h2>Üyelik Durumu</h2>
+
             <div style={styles.statusRow}>
               <span>Profil</span>
               <strong>Aktif</strong>
             </div>
+
             <div style={styles.statusRow}>
               <span>Studio</span>
               <strong style={{ color: "#777" }}>Pasif</strong>
             </div>
+
             <div style={styles.statusRow}>
               <span>Yayıncı Başvurusu</span>
               <strong>Kapalı</strong>
@@ -196,12 +201,15 @@ export default function ProfilePage() {
 
           <div style={styles.card}>
             <h2>Bildirimler</h2>
+
             <div style={styles.notice}>
               Bir yorumuna yeni cevap geldi.
             </div>
+
             <div style={styles.notice}>
               Rubailer kitabında yeni tartışma başlatıldı.
             </div>
+
             <div style={styles.notice}>
               Aynı kitabı alanlardan 3 yeni mesaj var.
             </div>
@@ -247,7 +255,7 @@ export default function ProfilePage() {
             {sameBookMessages.map((msg) => (
               <div key={msg.id} style={styles.sameBookItem}>
                 <div style={styles.smallCover}>
-                  <div>{msg.book}</div>
+                  <span>{msg.book}</span>
                 </div>
 
                 <div style={{ flex: 1 }}>
@@ -286,6 +294,7 @@ export default function ProfilePage() {
                 <div style={styles.meta}>
                   {msg.username} • {msg.time}
                 </div>
+
                 <p>{msg.text}</p>
 
                 <div style={styles.actionRow}>
