@@ -33,6 +33,34 @@ export default function AdminPanel() {
     loadReports();
   }, []);
 
+  const resolveReport = async (reportId, action) => {
+    try {
+      const res = await fetch("/api/admin/resolve-report", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          reportId,
+          action
+        })
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        alert(data.error || "Admin kararı kaydedilemedi.");
+        return;
+      }
+
+      alert("Admin kararı kaydedildi.");
+      await loadReports();
+    } catch (error) {
+      console.error("Admin karar hatası:", error);
+      alert("Admin kararı verilirken hata oluştu.");
+    }
+  };
+
   const createSealCode = async () => {
     try {
       setSealLoading(true);
@@ -149,17 +177,23 @@ export default function AdminPanel() {
 
             <div style={styles.infoBox}>
               <h3>Yayıncı Yönetimi</h3>
-              <p>Yayıncı başvuruları ve yetkilendirmeler burada kontrol edilecek.</p>
+              <p>
+                Yayıncı başvuruları ve yetkilendirmeler burada kontrol edilecek.
+              </p>
             </div>
 
             <div style={styles.infoBox}>
               <h3>Moderasyon</h3>
-              <p>Şikayetler, askıya alınan içerikler ve itirazlar burada izlenecek.</p>
+              <p>
+                Şikayetler, askıya alınan içerikler ve itirazlar burada izlenecek.
+              </p>
             </div>
 
             <div style={styles.infoBox}>
               <h3>Kitap Sistemi</h3>
-              <p>Kitaplar, mühür kodları ve kullanıcı kitap erişimleri yönetilecek.</p>
+              <p>
+                Kitaplar, mühür kodları ve kullanıcı kitap erişimleri yönetilecek.
+              </p>
             </div>
           </div>
         </section>
@@ -264,6 +298,24 @@ export default function AdminPanel() {
                         </div>
                       ))
                     )}
+                  </div>
+
+                  <div style={styles.adminActions}>
+                    <button
+                      style={styles.keepSuspendedButton}
+                      onClick={() =>
+                        resolveReport(report.id, "keep_suspended")
+                      }
+                    >
+                      Askıda Bırak
+                    </button>
+
+                    <button
+                      style={styles.restoreButton}
+                      onClick={() => resolveReport(report.id, "restore")}
+                    >
+                      İçeriği Geri Aç
+                    </button>
                   </div>
                 </div>
               );
@@ -506,6 +558,30 @@ const styles = {
   noVote: {
     margin: 0,
     color: "#6f604c"
+  },
+  adminActions: {
+    display: "flex",
+    gap: "10px",
+    marginTop: "16px",
+    flexWrap: "wrap"
+  },
+  keepSuspendedButton: {
+    padding: "10px 14px",
+    borderRadius: "10px",
+    border: "none",
+    background: "#7a4d12",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: "700"
+  },
+  restoreButton: {
+    padding: "10px 14px",
+    borderRadius: "10px",
+    border: "none",
+    background: "#2f7d46",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: "700"
   },
   formBox: {
     maxWidth: "460px",
