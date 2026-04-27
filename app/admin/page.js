@@ -73,6 +73,32 @@ export default function AdminPanel() {
     }
   };
 
+  const resolveAppeal = async (appealId, action) => {
+    try {
+      const res = await fetch("/api/admin/resolve-appeal", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ appealId, action })
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        alert(data.error || "İtiraz kararı kaydedilemedi.");
+        return;
+      }
+
+      alert("İtiraz kararı kaydedildi.");
+      await loadAppeals();
+      await loadReports();
+    } catch (error) {
+      console.error("İtiraz karar hatası:", error);
+      alert("İtiraz kararı verilirken hata oluştu.");
+    }
+  };
+
   const createSealCode = async () => {
     try {
       setSealLoading(true);
@@ -404,18 +430,14 @@ export default function AdminPanel() {
                 <div style={styles.adminActions}>
                   <button
                     style={styles.keepSuspendedButton}
-                    onClick={() =>
-                      alert("Sonraki adımda: İtirazı reddet API bağlanacak.")
-                    }
+                    onClick={() => resolveAppeal(appeal.id, "reject")}
                   >
                     İtirazı Reddet
                   </button>
 
                   <button
                     style={styles.restoreButton}
-                    onClick={() =>
-                      alert("Sonraki adımda: İtirazı kabul et API bağlanacak.")
-                    }
+                    onClick={() => resolveAppeal(appeal.id, "accept")}
                   >
                     İtirazı Kabul Et
                   </button>
