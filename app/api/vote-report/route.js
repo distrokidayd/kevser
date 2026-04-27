@@ -21,13 +21,6 @@ export async function POST(req) {
       );
     }
 
-    if (!["approve", "reject"].includes(decision)) {
-      return Response.json(
-        { success: false, error: "Geçersiz karar." },
-        { status: 400 }
-      );
-    }
-
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -50,11 +43,13 @@ export async function POST(req) {
       ? report.publisher_votes
       : [];
 
-    const alreadyVoted = currentVotes.some((vote) => vote.userId === userId);
+    const alreadyVoted = currentVotes.some(
+      (vote) => vote.userId === userId
+    );
 
     if (alreadyVoted) {
       return Response.json(
-        { success: false, error: "Bu şikayet için zaten oy verdiniz." },
+        { success: false, error: "Zaten oy verdiniz." },
         { status: 400 }
       );
     }
@@ -69,37 +64,37 @@ export async function POST(req) {
     ];
 
     const approveCount = newVotes.filter(
-      (vote) => vote.decision === "approve"
+      (v) => v.decision === "approve"
     ).length;
 
     const rejectCount = newVotes.filter(
-      (vote) => vote.decision === "reject"
+      (v) => v.decision === "reject"
     ).length;
 
     let newStatus = report.status || "pending";
 
+    // 🔥 KRİTİK: 2 ONAY → ASKıya AL
     if (approveCount >= 2) {
       newStatus = "suspended";
+
+      // 👉 İÇERİĞİ ASKıya AL
+      await supabase
+        .from("contributions")
+        .update({ status: "suspended" })
+        .eq("id", report.content_id);
     }
 
     if (rejectCount >= 2) {
       newStatus = "rejected";
     }
 
-    const { error: updateError } = await supabase
+    await supabase
       .from("reports")
       .update({
         publisher_votes: newVotes,
         status: newStatus,
       })
       .eq("id", reportId);
-
-    if (updateError) {
-      return Response.json(
-        { success: false, error: updateError.message },
-        { status: 500 }
-      );
-    }
 
     return Response.json({
       success: true,
