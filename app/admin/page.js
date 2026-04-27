@@ -1,13 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [reports, setReports] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+
   const [bookId, setBookId] = useState("");
   const [sealCode, setSealCode] = useState("");
   const [sealLoading, setSealLoading] = useState(false);
   const [sealMessage, setSealMessage] = useState("");
+
+  const loadReports = async () => {
+    try {
+      setReportsLoading(true);
+
+      const res = await fetch("/api/get-reports");
+      const data = await res.json();
+
+      if (data.success) {
+        setReports(data.reports || []);
+      }
+    } catch (error) {
+      console.error("Admin şikayetleri alınamadı:", error);
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadReports();
+  }, []);
 
   const createSealCode = async () => {
     try {
@@ -23,11 +47,11 @@ export default function AdminPanel() {
       const res = await fetch("/api/admin/create-seal", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          bookId: bookId.trim(),
-        }),
+          bookId: bookId.trim()
+        })
       });
 
       const data = await res.json();
@@ -45,6 +69,11 @@ export default function AdminPanel() {
     } finally {
       setSealLoading(false);
     }
+  };
+
+  const countVotes = (votes, decision) => {
+    if (!Array.isArray(votes)) return 0;
+    return votes.filter((vote) => vote.decision === decision).length;
   };
 
   return (
@@ -67,7 +96,9 @@ export default function AdminPanel() {
 
         <button
           style={
-            activeTab === "publisherApplications" ? styles.activeTab : styles.tab
+            activeTab === "publisherApplications"
+              ? styles.activeTab
+              : styles.tab
           }
           onClick={() => setActiveTab("publisherApplications")}
         >
@@ -76,7 +107,10 @@ export default function AdminPanel() {
 
         <button
           style={activeTab === "reports" ? styles.activeTab : styles.tab}
-          onClick={() => setActiveTab("reports")}
+          onClick={() => {
+            setActiveTab("reports");
+            loadReports();
+          }}
         >
           Şikayet Havuzu
         </button>
@@ -115,23 +149,17 @@ export default function AdminPanel() {
 
             <div style={styles.infoBox}>
               <h3>Yayıncı Yönetimi</h3>
-              <p>
-                Yayıncı başvuruları ve yetkilendirmeler burada kontrol edilecek.
-              </p>
+              <p>Yayıncı başvuruları ve yetkilendirmeler burada kontrol edilecek.</p>
             </div>
 
             <div style={styles.infoBox}>
               <h3>Moderasyon</h3>
-              <p>
-                Şikayetler, askıya alınan içerikler ve itirazlar burada izlenecek.
-              </p>
+              <p>Şikayetler, askıya alınan içerikler ve itirazlar burada izlenecek.</p>
             </div>
 
             <div style={styles.infoBox}>
               <h3>Kitap Sistemi</h3>
-              <p>
-                Kitaplar, mühür kodları ve kullanıcı kitap erişimleri yönetilecek.
-              </p>
+              <p>Kitaplar, mühür kodları ve kullanıcı kitap erişimleri yönetilecek.</p>
             </div>
           </div>
         </section>
@@ -148,11 +176,99 @@ export default function AdminPanel() {
 
       {activeTab === "reports" && (
         <section style={styles.card}>
-          <h2 style={styles.sectionTitle}>Şikayet Havuzu</h2>
-          <p style={styles.emptyText}>
-            Yayıncı havuzundan gelen şikayet kayıtları burada admin tarafından
-            izlenecek.
-          </p>
+          <div style={styles.sectionHeader}>
+            <div>
+              <h2 style={styles.sectionTitle}>Admin Şikayet Havuzu</h2>
+              <p style={styles.sectionDesc}>
+                Yayıncı havuzundan gelen şikayetler, oy geçmişi ve askıya alınan
+                içerikler burada izlenir.
+              </p>
+            </div>
+
+            <button style={styles.refreshButton} onClick={loadReports}>
+              Yenile
+            </button>
+          </div>
+
+          {reportsLoading && (
+            <p style={styles.emptyText}>Şikayetler yükleniyor...</p>
+          )}
+
+          {!reportsLoading && reports.length === 0 && (
+            <p style={styles.emptyText}>Şikayet kaydı bulunamadı.</p>
+          )}
+
+          <div style={styles.reportList}>
+            {reports.map((report) => {
+              const approveCount = countVotes(report.publisher_votes, "approve");
+              const rejectCount = countVotes(report.publisher_votes, "reject");
+
+              return (
+                <div key={report.id} style={styles.reportCard}>
+                  <div style={styles.reportTop}>
+                    <span style={styles.badge}>Şikayet Kaydı</span>
+                    <span style={styles.status}>{report.status || "pending"}</span>
+                  </div>
+
+                  <p>
+                    <strong>Report ID:</strong> {report.id}
+                  </p>
+
+                  <p>
+                    <strong>İçerik ID:</strong>{" "}
+                    {report.content_id || "Belirtilmemiş"}
+                  </p>
+
+                  <p>
+                    <strong>Şikayet Sebebi:</strong>{" "}
+                    {report.reason || "Sebep girilmemiş"}
+                  </p>
+
+                  <p>
+                    <strong>Oluşturulma:</strong>{" "}
+                    {report.created_at
+                      ? new Date(report.created_at).toLocaleString("tr-TR")
+                      : "Tarih yok"}
+                  </p>
+
+                  <div style={styles.voteSummary}>
+                    <span style={styles.approveCount}>Onay: {approveCount}</span>
+                    <span style={styles.rejectCount}>Red: {rejectCount}</span>
+                  </div>
+
+                  <div style={styles.voteBox}>
+                    <h4 style={styles.voteTitle}>Yayıncı Oy Geçmişi</h4>
+
+                    {!Array.isArray(report.publisher_votes) ||
+                    report.publisher_votes.length === 0 ? (
+                      <p style={styles.noVote}>Henüz oy yok.</p>
+                    ) : (
+                      report.publisher_votes.map((vote, index) => (
+                        <div key={index} style={styles.voteRow}>
+                          <span>
+                            <strong>Yayıncı:</strong>{" "}
+                            {vote.userId || "Bilinmiyor"}
+                          </span>
+
+                          <span>
+                            <strong>Karar:</strong>{" "}
+                            {vote.decision === "approve" ? "Onay" : "Red"}
+                          </span>
+
+                          <span>
+                            <strong>Tarih:</strong>{" "}
+                            {vote.votedAt
+                              ? new Date(vote.votedAt).toLocaleString("tr-TR")
+                              : "Tarih yok"}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </section>
       )}
 
@@ -218,33 +334,33 @@ const styles = {
     background: "#f4efe5",
     padding: "32px",
     color: "#2d2418",
-    fontFamily: "Arial, sans-serif",
+    fontFamily: "Arial, sans-serif"
   },
   header: {
     background: "#24180f",
     color: "#fff",
     padding: "28px",
     borderRadius: "18px",
-    marginBottom: "20px",
+    marginBottom: "20px"
   },
   smallTitle: {
     margin: 0,
     color: "#d8b46a",
-    fontSize: "14px",
+    fontSize: "14px"
   },
   title: {
     margin: "8px 0",
-    fontSize: "34px",
+    fontSize: "34px"
   },
   subtitle: {
     margin: 0,
-    color: "#eee2cf",
+    color: "#eee2cf"
   },
   tabs: {
     display: "flex",
     flexWrap: "wrap",
     gap: "10px",
-    marginBottom: "20px",
+    marginBottom: "20px"
   },
   tab: {
     padding: "12px 16px",
@@ -253,7 +369,7 @@ const styles = {
     background: "#fff",
     cursor: "pointer",
     color: "#3b2f20",
-    fontWeight: "600",
+    fontWeight: "600"
   },
   activeTab: {
     padding: "12px 16px",
@@ -262,49 +378,146 @@ const styles = {
     background: "#24180f",
     cursor: "pointer",
     color: "#fff",
-    fontWeight: "700",
+    fontWeight: "700"
   },
   card: {
     background: "#fffaf2",
     border: "1px solid #e2d2b8",
     borderRadius: "18px",
     padding: "24px",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+    boxShadow: "0 10px 25px rgba(0,0,0,0.08)"
+  },
+  sectionHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "16px",
+    alignItems: "center",
+    marginBottom: "18px"
   },
   sectionTitle: {
     margin: "0 0 18px 0",
     fontSize: "26px",
-    color: "#2d2418",
+    color: "#2d2418"
+  },
+  sectionDesc: {
+    marginTop: 0,
+    color: "#6f604c"
   },
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "16px",
+    gap: "16px"
   },
   infoBox: {
     background: "#fff",
     border: "1px solid #e5d6bd",
     borderRadius: "14px",
-    padding: "18px",
+    padding: "18px"
   },
   emptyText: {
     background: "#fff",
     border: "1px dashed #c9b28c",
     borderRadius: "12px",
     padding: "18px",
-    color: "#6f604c",
+    color: "#6f604c"
+  },
+  refreshButton: {
+    padding: "10px 14px",
+    borderRadius: "10px",
+    border: "none",
+    background: "#8b5e2b",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: "700"
+  },
+  reportList: {
+    display: "grid",
+    gap: "14px"
+  },
+  reportCard: {
+    background: "#fff",
+    border: "1px solid #e0ccb0",
+    borderRadius: "16px",
+    padding: "18px"
+  },
+  reportTop: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: "12px"
+  },
+  badge: {
+    background: "#fff0d6",
+    color: "#7a4d12",
+    padding: "6px 10px",
+    borderRadius: "999px",
+    fontSize: "13px",
+    fontWeight: "700"
+  },
+  status: {
+    background: "#eee",
+    color: "#333",
+    padding: "6px 10px",
+    borderRadius: "999px",
+    fontSize: "13px"
+  },
+  voteSummary: {
+    display: "flex",
+    gap: "10px",
+    marginTop: "14px",
+    marginBottom: "10px",
+    flexWrap: "wrap"
+  },
+  approveCount: {
+    background: "#e8f5ec",
+    color: "#236b3a",
+    padding: "8px 12px",
+    borderRadius: "999px",
+    fontWeight: "700",
+    fontSize: "14px"
+  },
+  rejectCount: {
+    background: "#fdecec",
+    color: "#8a2525",
+    padding: "8px 12px",
+    borderRadius: "999px",
+    fontWeight: "700",
+    fontSize: "14px"
+  },
+  voteBox: {
+    marginTop: "14px",
+    background: "#f8f2e8",
+    border: "1px solid #ead8bd",
+    borderRadius: "12px",
+    padding: "14px"
+  },
+  voteTitle: {
+    margin: "0 0 10px 0"
+  },
+  voteRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 120px 180px",
+    gap: "10px",
+    padding: "10px",
+    background: "#fff",
+    borderRadius: "10px",
+    marginBottom: "8px",
+    fontSize: "14px"
+  },
+  noVote: {
+    margin: 0,
+    color: "#6f604c"
   },
   formBox: {
     maxWidth: "460px",
     background: "#fff",
     border: "1px solid #e5d6bd",
     borderRadius: "14px",
-    padding: "20px",
+    padding: "20px"
   },
   label: {
     display: "block",
     fontWeight: "700",
-    marginBottom: "8px",
+    marginBottom: "8px"
   },
   input: {
     width: "100%",
@@ -313,7 +526,7 @@ const styles = {
     border: "1px solid #d8c7aa",
     marginBottom: "12px",
     fontSize: "15px",
-    boxSizing: "border-box",
+    boxSizing: "border-box"
   },
   primaryButton: {
     width: "100%",
@@ -324,27 +537,27 @@ const styles = {
     color: "#fff",
     cursor: "pointer",
     fontWeight: "700",
-    fontSize: "15px",
+    fontSize: "15px"
   },
   message: {
     marginTop: "12px",
-    color: "#6f604c",
+    color: "#6f604c"
   },
   sealResult: {
     marginTop: "16px",
     padding: "16px",
     borderRadius: "12px",
     background: "#f6f1e8",
-    border: "1px dashed #bfa36f",
+    border: "1px dashed #bfa36f"
   },
   sealLabel: {
     margin: "0 0 8px 0",
     color: "#6f604c",
-    fontSize: "14px",
+    fontSize: "14px"
   },
   sealCode: {
     fontSize: "24px",
     letterSpacing: "2px",
-    color: "#24180f",
-  },
+    color: "#24180f"
+  }
 };
