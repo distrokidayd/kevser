@@ -41,12 +41,8 @@ export default function ProfilePage() {
 
     const res = await fetch("/api/add-book-by-seal", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        seal_code: sealCode,
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seal_code: sealCode }),
     });
 
     const data = await res.json();
@@ -89,7 +85,7 @@ export default function ProfilePage() {
     {
       id: 1,
       from: "@rubai_okuru",
-      text: "Rubailer tartışmasında yazdığın yoruma katılıyorum. Özellikle zaman vurgusu çok yerindeydi.",
+      text: "Rubailer tartışmasında yazdığın yoruma katılıyorum.",
       time: "Bugün 15:12",
     },
     {
@@ -110,15 +106,6 @@ export default function ProfilePage() {
       text: "Bu kitabı alan okuyucularla Rubailer’deki içtenlik meselesini konuşmak istiyorum.",
       cooldown: "Sonraki toplu mesaj hakkı: 2 gün 14 saat",
     },
-    {
-      id: 2,
-      username: "@gulistan_serhi",
-      book: "Gülistan",
-      author: "Sadi Şirazi",
-      unread: 1,
-      text: "Gülistan okuyanlar için ahlak ve hikmet bölümleri hakkında ortak okuma yapmak isteyen var mı?",
-      cooldown: "Sonraki toplu mesaj hakkı: 1 gün 8 saat",
-    },
   ];
 
   const communityCalls = [
@@ -127,12 +114,6 @@ export default function ProfilePage() {
       username: "@okur_meclisi",
       text: "Bu hafta Rubailer üzerine ortak şerh çalışması yapmak isteyenleri tartışma alanına bekliyoruz.",
       time: "Bugün",
-    },
-    {
-      id: 2,
-      username: "@klasik_yolcu",
-      text: "Klasik eserleri birlikte okumak isteyenler için yeni bir okuma grubu başlatıyorum.",
-      time: "Dün",
     },
   ];
 
@@ -157,7 +138,7 @@ export default function ProfilePage() {
               Hoş geldin {user?.firstName || user?.username || "Kevser Üyesi"}
             </h1>
             <p style={styles.muted}>
-              Kitapların, mühür kodların, mesajların, bildirimlerin ve yayıncı durumun burada toplanır.
+              Kitapların, mühür kodların, mesajların, dil tercihlerin ve yayıncı durumun burada toplanır.
             </p>
           </div>
 
@@ -184,35 +165,24 @@ export default function ProfilePage() {
             <SideButton
               active={activeTab === "messages"}
               title="Mesajlar"
-              desc="4 mesaj kutusu"
               onClick={() => setActiveTab("messages")}
             />
 
             <SideButton
               active={activeTab === "books"}
               title="Kitaplarım"
-              desc="Kitaplar + mühür kodu"
               onClick={() => setActiveTab("books")}
-            />
-
-            <SideButton
-              active={activeTab === "notifications"}
-              title="Bildirimler"
-              desc="Cevaplar ve haberler"
-              onClick={() => setActiveTab("notifications")}
             />
 
             <SideButton
               active={activeTab === "profile"}
               title="Profil Düzenle"
-              desc="Ad, mail, müstear isim"
               onClick={() => setActiveTab("profile")}
             />
 
             <SideButton
               active={activeTab === "publisher"}
               title="Yayıncı / Stüdyo"
-              desc="Başvuru veya stüdyo erişimi"
               onClick={() => setActiveTab("publisher")}
             />
           </aside>
@@ -234,9 +204,7 @@ export default function ProfilePage() {
                   >
                     {sentMessages.map((msg) => (
                       <div key={msg.id} style={styles.messageItem}>
-                        <div style={styles.meta}>
-                          Kime: {msg.to} • {msg.time}
-                        </div>
+                        <div style={styles.meta}>Kime: {msg.to} • {msg.time}</div>
                         <p>{msg.text}</p>
                       </div>
                     ))}
@@ -250,9 +218,7 @@ export default function ProfilePage() {
                   >
                     {incomingMessages.map((msg) => (
                       <div key={msg.id} style={styles.messageItem}>
-                        <div style={styles.meta}>
-                          Kimden: {msg.from} • {msg.time}
-                        </div>
+                        <div style={styles.meta}>Kimden: {msg.from} • {msg.time}</div>
                         <p>{msg.text}</p>
                         <button style={styles.smallButton}>Cevap Yaz</button>
                       </div>
@@ -324,7 +290,7 @@ export default function ProfilePage() {
               <>
                 <PanelHeader
                   title="Kitaplarım"
-                  desc="Satın alınan kitabın içindeki mühür kodu burada girilir. Kod hangi kitaba aitse o kitap hesaba eklenir ve yorum/şerh/tahlil hakkı açılır."
+                  desc="Kitabın içindeki mühür kodu burada girilir. Kod hangi kitaba aitse o kitap hesaba eklenir ve yorum/şerh/tahlil hakkı açılır."
                 />
 
                 <section style={styles.booksTopGrid}>
@@ -332,7 +298,7 @@ export default function ProfilePage() {
                     <div style={styles.heroBadge}>Mühür Kodu</div>
                     <h2>Kitabı Hesabıma Ekle</h2>
                     <p style={styles.muted}>
-                      Her basılı veya dijital Kevser kitabının ön kısmında platformu anlatan metin ve o kitaba özel mühür kodu bulunur. Bu kodu girince kitap “Kitaplarım” alanına eklenir.
+                      Her basılı veya dijital Kevser kitabının ön kısmında platformu anlatan metin ve kitaba özel mühür kodu bulunur.
                     </p>
 
                     <input
@@ -362,12 +328,9 @@ export default function ProfilePage() {
                   </div>
 
                   <div style={styles.ownershipInfo}>
-                    <h2>Kitap Sahipliği Nasıl Çalışır?</h2>
+                    <h2>Kitap Sahipliği</h2>
                     <p>
-                      Kullanıcı bir kitabı satın aldığında kitabın içindeki mühür kodunu kullanır. Sistem bu kodun hangi kitaba ait olduğunu tanır ve kitabı kullanıcının hesabına bağlar.
-                    </p>
-                    <p>
-                      Böylece Books sayfasında ilgili kitaba girildiğinde şerh, yorum ve tahlil alanı yalnızca kitabı gerçekten sahiplenen üyeye açılır.
+                      Mühür kodu kitabı kullanıcının hesabına bağlar. Böylece yalnızca kitabı gerçekten alan kişi ilgili kitapta yorum, şerh ve tahlil yazabilir.
                     </p>
                   </div>
                 </section>
@@ -386,9 +349,7 @@ export default function ProfilePage() {
 
                         <div>
                           <div style={styles.meta}>{book.language}</div>
-                          <h3>
-                            {book.author} — {book.title}
-                          </h3>
+                          <h3>{book.author} — {book.title}</h3>
                           <div style={styles.bookStatus}>{book.status}</div>
                           <p style={styles.muted}>
                             Bu kitap hesabınıza bağlı olduğu için ilgili kitap sayfasında yorum, şerh ve tahlil yazabilirsiniz.
@@ -408,51 +369,14 @@ export default function ProfilePage() {
               </>
             )}
 
-            {activeTab === "notifications" && (
-              <>
-                <PanelHeader
-                  title="Bildirimler"
-                  desc="Yorum cevapları, tartışmalar, kitap sahipliği ve sistem haberleri burada görünür."
-                />
-
-                <div style={styles.notice}>Bir yorumuna yeni cevap geldi.</div>
-                <div style={styles.notice}>Rubailer kitabında yeni tartışma başlatıldı.</div>
-                <div style={styles.notice}>Aynı kitabı alanlardan 3 yeni mesaj var.</div>
-              </>
-            )}
-
             {activeTab === "profile" && (
               <>
                 <PanelHeader
                   title="Profil Düzenle"
-                  desc="Kullanıcı bilgileri, görünen ad ve ileride müstear isim bu alanda düzenlenecek."
+                  desc="Ana dil, bildiğiniz diller ve profil bilgileriniz burada düzenlenir. Siteye sonraki girişlerinizde seçtiğiniz ana dil esas alınır."
                 />
 
-                <div style={styles.profileGrid}>
-                  <div style={styles.formCard}>
-                    <label style={styles.label}>Görünen Ad</label>
-                    <input value={user?.firstName || ""} readOnly style={styles.input} />
-                  </div>
-
-                  <div style={styles.formCard}>
-                    <label style={styles.label}>E-posta</label>
-                    <input
-                      value={user?.primaryEmailAddress?.emailAddress || ""}
-                      readOnly
-                      style={styles.input}
-                    />
-                  </div>
-
-                  <div style={styles.formCard}>
-                    <label style={styles.label}>Müstear İsim</label>
-                    <input placeholder="İleride düzenlenebilir" readOnly style={styles.input} />
-                  </div>
-
-                  <div style={styles.formCard}>
-                    <label style={styles.label}>Profil Durumu</label>
-                    <input value={isPublisher ? "Yayıncı" : "Aktif Üye"} readOnly style={styles.input} />
-                  </div>
-                </div>
+                <ProfileEditSection user={user} isPublisher={isPublisher} />
               </>
             )}
 
@@ -463,16 +387,114 @@ export default function ProfilePage() {
                   desc="Yayıncı değilsen başvuru yaparsın. Admin kabul ederse bu bölüm stüdyo erişimine dönüşür."
                 />
 
-                <PublisherStudioSection
-                  isPublisher={isPublisher}
-                  user={user}
-                />
+                <PublisherStudioSection isPublisher={isPublisher} user={user} />
               </>
             )}
           </section>
         </section>
       </section>
     </main>
+  );
+}
+
+function ProfileEditSection({ user, isPublisher }) {
+  const [nativeLanguage, setNativeLanguage] = useState("Türkçe");
+  const [knownLanguages, setKnownLanguages] = useState(["Türkçe"]);
+  const [newLanguage, setNewLanguage] = useState("");
+
+  function addKnownLanguage() {
+    if (!newLanguage.trim()) return;
+
+    if (!knownLanguages.includes(newLanguage.trim())) {
+      setKnownLanguages([...knownLanguages, newLanguage.trim()]);
+    }
+
+    setNewLanguage("");
+  }
+
+  function removeLanguage(lang) {
+    setKnownLanguages(knownLanguages.filter((item) => item !== lang));
+  }
+
+  return (
+    <div style={styles.profileGrid}>
+      <div style={styles.formCard}>
+        <label style={styles.label}>Görünen Ad</label>
+        <input value={user?.firstName || ""} readOnly style={styles.input} />
+      </div>
+
+      <div style={styles.formCard}>
+        <label style={styles.label}>E-posta</label>
+        <input
+          value={user?.primaryEmailAddress?.emailAddress || ""}
+          readOnly
+          style={styles.input}
+        />
+      </div>
+
+      <div style={styles.formCard}>
+        <label style={styles.label}>Ana Dil</label>
+        <select
+          value={nativeLanguage}
+          onChange={(e) => setNativeLanguage(e.target.value)}
+          style={styles.input}
+        >
+          <option>Türkçe</option>
+          <option>English</option>
+          <option>العربية</option>
+          <option>Deutsch</option>
+          <option>Français</option>
+          <option>Español</option>
+          <option>Русский</option>
+          <option>فارسی</option>
+          <option>اردو</option>
+          <option>中文</option>
+          <option>Bahasa Indonesia</option>
+          <option>Malay</option>
+        </select>
+
+        <p style={styles.smallMuted}>
+          İlk girişte IP Türkiye ise otomatik Türkçe seçilecek. Sonra kullanıcı buradan değiştirebilecek.
+        </p>
+      </div>
+
+      <div style={styles.formCard}>
+        <label style={styles.label}>Profil Durumu</label>
+        <input value={isPublisher ? "Yayıncı" : "Aktif Üye"} readOnly style={styles.input} />
+      </div>
+
+      <div style={styles.formCardWide}>
+        <label style={styles.label}>Bildiği Diller</label>
+
+        <div style={styles.languageRow}>
+          <input
+            value={newLanguage}
+            onChange={(e) => setNewLanguage(e.target.value)}
+            placeholder="Dil ekle"
+            style={styles.input}
+          />
+
+          <button onClick={addKnownLanguage} style={styles.primaryButton}>
+            Ekle
+          </button>
+        </div>
+
+        <div style={styles.languageList}>
+          {knownLanguages.map((lang) => (
+            <span key={lang} style={styles.languagePill}>
+              {lang}
+              <button onClick={() => removeLanguage(lang)} style={styles.pillRemove}>
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+
+        <p style={styles.smallMuted}>
+          Anlaşma metinleri, başvuru süreci ve site dili kullanıcının ana diline göre gösterilecek.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -490,6 +512,7 @@ function PublisherStudioSection({ isPublisher, user }) {
     reason: "",
   });
 
+  const [agreementText, setAgreementText] = useState("");
   const [agreementOpen, setAgreementOpen] = useState(false);
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [voiceAccepted, setVoiceAccepted] = useState(false);
@@ -497,13 +520,25 @@ function PublisherStudioSection({ isPublisher, user }) {
   const [applicationLoading, setApplicationLoading] = useState(false);
   const [applicationMessage, setApplicationMessage] = useState("");
 
-  const agreementText = "Kevser platform kurallarını kabul ediyorum.";
+  useEffect(() => {
+    fetchAgreement();
+  }, []);
+
+  async function fetchAgreement() {
+    try {
+      const res = await fetch("/api/get-agreement");
+      const data = await res.json();
+
+      if (data.success) {
+        setAgreementText(data.agreementText);
+      }
+    } catch (error) {
+      console.error("Agreement alınamadı:", error);
+    }
+  }
 
   function updateField(field, value) {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setForm((prev) => ({ ...prev, [field]: value }));
   }
 
   function goStudio() {
@@ -543,15 +578,13 @@ Twitter/X: ${form.twitter}
 YouTube: ${form.youtube}
 Yayıncılık deneyimi: ${form.hasExperience}
 Deneyim açıklaması: ${form.experience}
-Sesli onay: ${voiceFileName || "Mikrofon/demo kabul"}
+Sesli onay: ${voiceFileName || "Mikrofon ile kabul"}
 Sözleşme: ${agreementText}
       `;
 
       const res = await fetch("/api/create-publisher-application", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: form.fullName,
           email: form.email,
@@ -589,7 +622,6 @@ Sözleşme: ${agreementText}
           <h2>Kalıcı Dosyalarım</h2>
           <p style={styles.muted}>
             Yayıncı olarak kabul edildiğiniz için başvuru kartı artık kalıcı dosyalar alanına dönüşür.
-            Sesli kabul kaydı, imza dosyaları ve ileride yüklenecek belgeler burada tutulur.
           </p>
 
           <div style={styles.filePreview}>
@@ -604,7 +636,7 @@ Sözleşme: ${agreementText}
           <div style={styles.heroBadgeGreen}>Stüdyo Açık</div>
           <h2>Stüdyoya Git</h2>
           <p style={styles.muted}>
-            Yayıncı paneline erişiminiz aktif. Stüdyo Dashboard, Havuz, Gelirler ve Yayıncı Profil Ayarları ekranlarına geçebilirsiniz.
+            Yayıncı paneline erişiminiz aktif.
           </p>
 
           <button onClick={goStudio} style={styles.linkGreenButton}>
@@ -620,86 +652,46 @@ Sözleşme: ${agreementText}
       <div style={styles.publisherApplyCard}>
         <div style={styles.heroBadge}>Başvuru</div>
         <h2>Yayıncı Olarak Başvur</h2>
-        <p style={styles.muted}>
-          Yayıncı başvurusu admin panelinde incelenir. Sözleşme metnini kabul edip sesli onay vermeden başvuru gönderilemez.
-        </p>
 
         <div style={styles.formGrid}>
           <div>
             <label style={styles.label}>Ad Soyad *</label>
-            <input
-              value={form.fullName}
-              onChange={(e) => updateField("fullName", e.target.value)}
-              style={styles.input}
-            />
+            <input value={form.fullName} onChange={(e) => updateField("fullName", e.target.value)} style={styles.input} />
           </div>
 
           <div>
             <label style={styles.label}>E-posta *</label>
-            <input
-              value={form.email}
-              onChange={(e) => updateField("email", e.target.value)}
-              style={styles.input}
-            />
+            <input value={form.email} onChange={(e) => updateField("email", e.target.value)} style={styles.input} />
           </div>
 
           <div>
             <label style={styles.label}>Telefon</label>
-            <input
-              value={form.phone}
-              onChange={(e) => updateField("phone", e.target.value)}
-              placeholder="Telefon"
-              style={styles.input}
-            />
+            <input value={form.phone} onChange={(e) => updateField("phone", e.target.value)} style={styles.input} />
           </div>
 
           <div>
             <label style={styles.label}>Website</label>
-            <input
-              value={form.website}
-              onChange={(e) => updateField("website", e.target.value)}
-              placeholder="https://..."
-              style={styles.input}
-            />
+            <input value={form.website} onChange={(e) => updateField("website", e.target.value)} style={styles.input} />
           </div>
 
           <div>
             <label style={styles.label}>Instagram</label>
-            <input
-              value={form.instagram}
-              onChange={(e) => updateField("instagram", e.target.value)}
-              placeholder="@kullanici"
-              style={styles.input}
-            />
+            <input value={form.instagram} onChange={(e) => updateField("instagram", e.target.value)} style={styles.input} />
           </div>
 
           <div>
             <label style={styles.label}>Twitter / X</label>
-            <input
-              value={form.twitter}
-              onChange={(e) => updateField("twitter", e.target.value)}
-              placeholder="@kullanici"
-              style={styles.input}
-            />
+            <input value={form.twitter} onChange={(e) => updateField("twitter", e.target.value)} style={styles.input} />
           </div>
 
           <div>
             <label style={styles.label}>YouTube / Kanal</label>
-            <input
-              value={form.youtube}
-              onChange={(e) => updateField("youtube", e.target.value)}
-              placeholder="Kanal linki"
-              style={styles.input}
-            />
+            <input value={form.youtube} onChange={(e) => updateField("youtube", e.target.value)} style={styles.input} />
           </div>
 
           <div>
             <label style={styles.label}>Yayıncılık Deneyimi</label>
-            <select
-              value={form.hasExperience}
-              onChange={(e) => updateField("hasExperience", e.target.value)}
-              style={styles.input}
-            >
+            <select value={form.hasExperience} onChange={(e) => updateField("hasExperience", e.target.value)} style={styles.input}>
               <option value="">Seçiniz</option>
               <option value="var">Var</option>
               <option value="yok">Yok</option>
@@ -708,20 +700,10 @@ Sözleşme: ${agreementText}
         </div>
 
         <label style={styles.label}>Deneyim Açıklaması</label>
-        <textarea
-          value={form.experience}
-          onChange={(e) => updateField("experience", e.target.value)}
-          placeholder="Yayıncılık, editörlük, ilmi çalışma veya moderasyon deneyiminizi yazın."
-          style={styles.textarea}
-        />
+        <textarea value={form.experience} onChange={(e) => updateField("experience", e.target.value)} style={styles.textarea} />
 
         <label style={styles.label}>Başvuru Sebebi *</label>
-        <textarea
-          value={form.reason}
-          onChange={(e) => updateField("reason", e.target.value)}
-          placeholder="Neden Kevser Yayın Evi'nde yayıncı olmak istiyorsunuz?"
-          style={styles.textarea}
-        />
+        <textarea value={form.reason} onChange={(e) => updateField("reason", e.target.value)} style={styles.textarea} />
 
         <div style={styles.agreementBox}>
           <label style={styles.checkboxLabel}>
@@ -741,7 +723,7 @@ Sözleşme: ${agreementText}
         <div style={styles.voiceBox}>
           <h3>Sesli Kabul</h3>
           <p style={styles.muted}>
-            Kullanıcı sözleşmeyi kabul etmek için mikrofonla “kabul ettim” diyecek veya MP3 dosyası yükleyecek.
+            Mikrofonla “kabul ettim” denilecek veya MP3 dosyası yüklenecek.
           </p>
 
           <div style={styles.actionRow}>
@@ -780,17 +762,11 @@ Sözleşme: ${agreementText}
           )}
         </div>
 
-        <button
-          onClick={submitPublisherApplication}
-          disabled={applicationLoading}
-          style={styles.primaryButton}
-        >
+        <button onClick={submitPublisherApplication} disabled={applicationLoading} style={styles.primaryButton}>
           {applicationLoading ? "Başvuru Gönderiliyor..." : "Başvuruyu Gönder"}
         </button>
 
-        {applicationMessage && (
-          <div style={styles.notice}>{applicationMessage}</div>
-        )}
+        {applicationMessage && <div style={styles.notice}>{applicationMessage}</div>}
       </div>
 
       <div style={styles.studioDisabledCard}>
@@ -809,12 +785,10 @@ Sözleşme: ${agreementText}
         <div style={styles.modal}>
           <div style={styles.modalContent}>
             <h2>Kevser Yayın Evi Platform Anlaşması</h2>
-            <p style={styles.muted}>
-              Bu metin ileride admin panelinden düzenlenecek.
-            </p>
+            <p style={styles.muted}>Bu metin admin panelinden güncellenecek.</p>
 
             <div style={styles.agreementText}>
-              {agreementText}
+              {agreementText || "Anlaşma metni yükleniyor..."}
             </div>
 
             <div style={styles.actionRow}>
@@ -845,16 +819,10 @@ Sözleşme: ${agreementText}
   );
 }
 
-function SideButton({ active, title, desc, onClick }) {
+function SideButton({ active, title, onClick }) {
   return (
-    <button
-      onClick={onClick}
-      style={active ? styles.sideButtonActive : styles.sideButton}
-    >
-      <span>
-        <strong>{title}</strong>
-        <small>{desc}</small>
-      </span>
+    <button onClick={onClick} style={active ? styles.sideButtonActive : styles.sideButton}>
+      <strong>{title}</strong>
     </button>
   );
 }
@@ -862,10 +830,8 @@ function SideButton({ active, title, desc, onClick }) {
 function PanelHeader({ title, desc }) {
   return (
     <div style={styles.panelHeader}>
-      <div>
-        <h2 style={styles.panelTitle}>{title}</h2>
-        <p style={styles.muted}>{desc}</p>
-      </div>
+      <h2 style={styles.panelTitle}>{title}</h2>
+      <p style={styles.muted}>{desc}</p>
     </div>
   );
 }
@@ -939,6 +905,11 @@ const styles = {
     color: "#aaa",
     lineHeight: "1.7",
   },
+  smallMuted: {
+    color: "#777",
+    fontSize: "13px",
+    lineHeight: "1.6",
+  },
   profileBadge: {
     display: "flex",
     gap: "14px",
@@ -969,7 +940,7 @@ const styles = {
   },
   layout: {
     display: "grid",
-    gridTemplateColumns: "280px minmax(0, 1fr)",
+    gridTemplateColumns: "260px minmax(0, 1fr)",
     gap: "22px",
     alignItems: "start",
   },
@@ -993,23 +964,25 @@ const styles = {
     width: "100%",
     border: "1px solid #303030",
     borderRadius: "16px",
-    padding: "14px",
+    padding: "16px",
     marginBottom: "10px",
     color: "#eee",
     background: "#050505",
     textAlign: "left",
     cursor: "pointer",
+    fontSize: "15px",
   },
   sideButtonActive: {
     width: "100%",
     border: "1px solid #f5b400",
     borderRadius: "16px",
-    padding: "14px",
+    padding: "16px",
     marginBottom: "10px",
     color: "black",
     background: "#f5b400",
     textAlign: "left",
     cursor: "pointer",
+    fontSize: "15px",
   },
   content: {
     border: "1px solid #333",
@@ -1289,15 +1262,6 @@ const styles = {
     padding: "11px 14px",
     fontWeight: "bold",
   },
-  linkGreen: {
-    display: "inline-block",
-    textDecoration: "none",
-    background: "#166534",
-    color: "white",
-    borderRadius: "12px",
-    padding: "11px 14px",
-    fontWeight: "bold",
-  },
   linkGreenButton: {
     background: "#166534",
     color: "white",
@@ -1335,11 +1299,45 @@ const styles = {
     padding: "18px",
     background: "black",
   },
+  formCardWide: {
+    gridColumn: "1 / -1",
+    border: "1px solid #333",
+    borderRadius: "18px",
+    padding: "18px",
+    background: "black",
+  },
   label: {
     display: "block",
     color: "#ddd",
     fontWeight: "bold",
     marginBottom: "8px",
+  },
+  languageRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr auto",
+    gap: "10px",
+    alignItems: "start",
+  },
+  languageList: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+    marginTop: "10px",
+  },
+  languagePill: {
+    background: "#f5b400",
+    color: "black",
+    borderRadius: "999px",
+    padding: "7px 10px",
+    fontWeight: "bold",
+  },
+  pillRemove: {
+    marginLeft: "8px",
+    border: "none",
+    background: "transparent",
+    color: "black",
+    cursor: "pointer",
+    fontWeight: "bold",
   },
   publisherStudioGrid: {
     display: "grid",
