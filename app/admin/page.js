@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState("dashboard");
 
+  const [applications, setApplications] = useState([]);
+  const [applicationsLoading, setApplicationsLoading] = useState(false);
+
   const [reports, setReports] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(false);
 
@@ -15,6 +18,44 @@ export default function AdminPanel() {
   const [sealCode, setSealCode] = useState("");
   const [sealLoading, setSealLoading] = useState(false);
   const [sealMessage, setSealMessage] = useState("");
+
+  const loadApplications = async () => {
+    try {
+      setApplicationsLoading(true);
+      const res = await fetch("/api/admin/get-publisher-applications");
+      const data = await res.json();
+      if (data.success) setApplications(data.applications || []);
+    } catch (error) {
+      console.error("Yayıncı başvuruları alınamadı:", error);
+    } finally {
+      setApplicationsLoading(false);
+    }
+  };
+
+  const resolveApplication = async (applicationId, action) => {
+    try {
+      const res = await fetch("/api/admin/resolve-publisher-application", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ applicationId, action })
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        alert(data.error || "Başvuru kararı kaydedilemedi.");
+        return;
+      }
+
+      alert("Başvuru kararı kaydedildi.");
+      await loadApplications();
+    } catch (error) {
+      console.error("Başvuru karar hatası:", error);
+      alert("Başvuru kararı verilirken hata oluştu.");
+    }
+  };
 
   const loadReports = async () => {
     try {
@@ -43,6 +84,7 @@ export default function AdminPanel() {
   };
 
   useEffect(() => {
+    loadApplications();
     loadReports();
     loadAppeals();
   }, []);
@@ -166,7 +208,10 @@ export default function AdminPanel() {
               ? styles.activeTab
               : styles.tab
           }
-          onClick={() => setActiveTab("publisherApplications")}
+          onClick={() => {
+            setActiveTab("publisherApplications");
+            loadApplications();
+          }}
         >
           Yayıncı Başvuruları
         </button>
@@ -218,23 +263,17 @@ export default function AdminPanel() {
 
             <div style={styles.infoBox}>
               <h3>Yayıncı Yönetimi</h3>
-              <p>
-                Yayıncı başvuruları ve yetkilendirmeler burada kontrol edilecek.
-              </p>
+              <p>Yayıncı başvuruları ve yetkilendirmeler burada kontrol edilecek.</p>
             </div>
 
             <div style={styles.infoBox}>
               <h3>Moderasyon</h3>
-              <p>
-                Şikayetler, askıya alınan içerikler ve itirazlar burada izlenecek.
-              </p>
+              <p>Şikayetler, askıya alınan içerikler ve itirazlar burada izlenecek.</p>
             </div>
 
             <div style={styles.infoBox}>
               <h3>Kitap Sistemi</h3>
-              <p>
-                Kitaplar, mühür kodları ve kullanıcı kitap erişimleri yönetilecek.
-              </p>
+              <p>Kitaplar, mühür kodları ve kullanıcı kitap erişimleri yönetilecek.</p>
             </div>
           </div>
         </section>
@@ -242,10 +281,112 @@ export default function AdminPanel() {
 
       {activeTab === "publisherApplications" && (
         <section style={styles.card}>
-          <h2 style={styles.sectionTitle}>Yayıncı Başvuruları</h2>
-          <p style={styles.emptyText}>
-            Yayıncı başvuru sistemi sonraki adımda Supabase’e bağlanacak.
-          </p>
+          <div style={styles.sectionHeader}>
+            <div>
+              <h2 style={styles.sectionTitle}>Yayıncı Başvuruları</h2>
+              <p style={styles.sectionDesc}>
+                Yayıncı olmak isteyen kullanıcıların başvuruları burada incelenir.
+              </p>
+            </div>
+
+            <button style={styles.refreshButton} onClick={loadApplications}>
+              Yenile
+            </button>
+          </div>
+
+          {applicationsLoading && (
+            <p style={styles.emptyText}>Başvurular yükleniyor...</p>
+          )}
+
+          {!applicationsLoading && applications.length === 0 && (
+            <p style={styles.emptyText}>Henüz yayıncı başvurusu yok.</p>
+          )}
+
+          <div style={styles.reportList}>
+            {applications.map((application) => (
+              <div key={application.id} style={styles.reportCard}>
+                <div style={styles.reportTop}>
+                  <span style={styles.badge}>Yayıncı Başvurusu</span>
+                  <span style={styles.status}>
+                    {application.status || "pending"}
+                  </span>
+                </div>
+
+                <p>
+                  <strong>Başvuru ID:</strong> {application.id}
+                </p>
+
+                <p>
+                  <strong>Kullanıcı ID:</strong> {application.user_id}
+                </p>
+
+                <p>
+                  <strong>Ad Soyad:</strong> {application.full_name}
+                </p>
+
+                <p>
+                  <strong>E-posta:</strong> {application.email}
+                </p>
+
+                <p>
+                  <strong>Telefon:</strong> {application.phone || "Yok"}
+                </p>
+
+                <p>
+                  <strong>Adres:</strong> {application.address || "Yok"}
+                </p>
+
+                <p>
+                  <strong>Müstear İsim:</strong>{" "}
+                  {application.pen_name || "Yok"}
+                </p>
+
+                <p>
+                  <strong>Dini Seçim:</strong>{" "}
+                  {application.religion || "Yok"}
+                </p>
+
+                <p>
+                  <strong>Mezhep:</strong>{" "}
+                  {application.denomination || "Yok"}
+                </p>
+
+                <p>
+                  <strong>Tecrübe:</strong>{" "}
+                  {application.experience || "Belirtilmemiş"}
+                </p>
+
+                <p>
+                  <strong>Başvuru Sebebi:</strong> {application.reason}
+                </p>
+
+                <p>
+                  <strong>Oluşturulma:</strong>{" "}
+                  {application.created_at
+                    ? new Date(application.created_at).toLocaleString("tr-TR")
+                    : "Tarih yok"}
+                </p>
+
+                <div style={styles.adminActions}>
+                  <button
+                    style={styles.restoreButton}
+                    onClick={() =>
+                      resolveApplication(application.id, "approve")
+                    }
+                  >
+                    Yayıncı Olarak Onayla
+                  </button>
+
+                  <button
+                    style={styles.keepSuspendedButton}
+                    onClick={() => resolveApplication(application.id, "reject")}
+                  >
+                    Başvuruyu Reddet
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
@@ -255,8 +396,7 @@ export default function AdminPanel() {
             <div>
               <h2 style={styles.sectionTitle}>Admin Şikayet Havuzu</h2>
               <p style={styles.sectionDesc}>
-                Yayıncı havuzundan gelen şikayetler, oy geçmişi ve askıya alınan
-                içerikler burada izlenir.
+                Yayıncı havuzundan gelen şikayetler, oy geçmişi ve askıya alınan içerikler burada izlenir.
               </p>
             </div>
 
@@ -285,20 +425,9 @@ export default function AdminPanel() {
                     <span style={styles.status}>{report.status || "pending"}</span>
                   </div>
 
-                  <p>
-                    <strong>Report ID:</strong> {report.id}
-                  </p>
-
-                  <p>
-                    <strong>İçerik ID:</strong>{" "}
-                    {report.content_id || "Belirtilmemiş"}
-                  </p>
-
-                  <p>
-                    <strong>Şikayet Sebebi:</strong>{" "}
-                    {report.reason || "Sebep girilmemiş"}
-                  </p>
-
+                  <p><strong>Report ID:</strong> {report.id}</p>
+                  <p><strong>İçerik ID:</strong> {report.content_id || "Belirtilmemiş"}</p>
+                  <p><strong>Şikayet Sebebi:</strong> {report.reason || "Sebep girilmemiş"}</p>
                   <p>
                     <strong>Oluşturulma:</strong>{" "}
                     {report.created_at
@@ -311,42 +440,10 @@ export default function AdminPanel() {
                     <span style={styles.rejectCount}>Red: {rejectCount}</span>
                   </div>
 
-                  <div style={styles.voteBox}>
-                    <h4 style={styles.voteTitle}>Yayıncı Oy Geçmişi</h4>
-
-                    {!Array.isArray(report.publisher_votes) ||
-                    report.publisher_votes.length === 0 ? (
-                      <p style={styles.noVote}>Henüz oy yok.</p>
-                    ) : (
-                      report.publisher_votes.map((vote, index) => (
-                        <div key={index} style={styles.voteRow}>
-                          <span>
-                            <strong>Yayıncı:</strong>{" "}
-                            {vote.userId || "Bilinmiyor"}
-                          </span>
-
-                          <span>
-                            <strong>Karar:</strong>{" "}
-                            {vote.decision === "approve" ? "Onay" : "Red"}
-                          </span>
-
-                          <span>
-                            <strong>Tarih:</strong>{" "}
-                            {vote.votedAt
-                              ? new Date(vote.votedAt).toLocaleString("tr-TR")
-                              : "Tarih yok"}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
                   <div style={styles.adminActions}>
                     <button
                       style={styles.keepSuspendedButton}
-                      onClick={() =>
-                        resolveReport(report.id, "keep_suspended")
-                      }
+                      onClick={() => resolveReport(report.id, "keep_suspended")}
                     >
                       Askıda Bırak
                     </button>
@@ -371,8 +468,7 @@ export default function AdminPanel() {
             <div>
               <h2 style={styles.sectionTitle}>İtirazlar</h2>
               <p style={styles.sectionDesc}>
-                Askıya alınan içeriklere gelen kullanıcı itirazları burada
-                nihai karara bağlanır.
+                Askıya alınan içeriklere gelen kullanıcı itirazları burada nihai karara bağlanır.
               </p>
             </div>
 
@@ -397,29 +493,11 @@ export default function AdminPanel() {
                   <span style={styles.status}>{appeal.status || "pending"}</span>
                 </div>
 
-                <p>
-                  <strong>İtiraz ID:</strong> {appeal.id}
-                </p>
-
-                <p>
-                  <strong>Report ID:</strong>{" "}
-                  {appeal.report_id || "Belirtilmemiş"}
-                </p>
-
-                <p>
-                  <strong>Contribution ID:</strong>{" "}
-                  {appeal.contribution_id || "Belirtilmemiş"}
-                </p>
-
-                <p>
-                  <strong>Kullanıcı:</strong> {appeal.user_id || "Bilinmiyor"}
-                </p>
-
-                <p>
-                  <strong>İtiraz Sebebi:</strong>{" "}
-                  {appeal.reason || "Sebep girilmemiş"}
-                </p>
-
+                <p><strong>İtiraz ID:</strong> {appeal.id}</p>
+                <p><strong>Report ID:</strong> {appeal.report_id || "Belirtilmemiş"}</p>
+                <p><strong>Contribution ID:</strong> {appeal.contribution_id || "Belirtilmemiş"}</p>
+                <p><strong>Kullanıcı:</strong> {appeal.user_id || "Bilinmiyor"}</p>
+                <p><strong>İtiraz Sebebi:</strong> {appeal.reason || "Sebep girilmemiş"}</p>
                 <p>
                   <strong>Oluşturulma:</strong>{" "}
                   {appeal.created_at
@@ -648,30 +726,6 @@ const styles = {
     borderRadius: "999px",
     fontWeight: "700",
     fontSize: "14px"
-  },
-  voteBox: {
-    marginTop: "14px",
-    background: "#f8f2e8",
-    border: "1px solid #ead8bd",
-    borderRadius: "12px",
-    padding: "14px"
-  },
-  voteTitle: {
-    margin: "0 0 10px 0"
-  },
-  voteRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 120px 180px",
-    gap: "10px",
-    padding: "10px",
-    background: "#fff",
-    borderRadius: "10px",
-    marginBottom: "8px",
-    fontSize: "14px"
-  },
-  noVote: {
-    margin: 0,
-    color: "#6f604c"
   },
   adminActions: {
     display: "flex",
