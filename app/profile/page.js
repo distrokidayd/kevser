@@ -11,8 +11,10 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [expandedBox, setExpandedBox] = useState(null);
+
   const [isPublisher, setIsPublisher] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [profileData, setProfileData] = useState(null);
 
   useEffect(() => {
     loadMyProfile();
@@ -24,6 +26,7 @@ export default function ProfilePage() {
       const data = await res.json();
 
       if (data.success) {
+        setProfileData(data.profile);
         setIsPublisher(data.isPublisher);
       }
     } catch (error) {
@@ -41,8 +44,12 @@ export default function ProfilePage() {
 
     const res = await fetch("/api/add-book-by-seal", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ seal_code: sealCode }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        seal_code: sealCode,
+      }),
     });
 
     const data = await res.json();
@@ -376,7 +383,12 @@ export default function ProfilePage() {
                   desc="Ana dil, bildiğiniz diller ve profil bilgileriniz burada düzenlenir. Siteye sonraki girişlerinizde seçtiğiniz ana dil esas alınır."
                 />
 
-                <ProfileEditSection user={user} isPublisher={isPublisher} />
+                <ProfileEditSection
+                  user={user}
+                  isPublisher={isPublisher}
+                  profileData={profileData}
+                  reloadProfile={loadMyProfile}
+                />
               </>
             )}
 
@@ -397,10 +409,43 @@ export default function ProfilePage() {
   );
 }
 
-function ProfileEditSection({ user, isPublisher }) {
-  const [nativeLanguage, setNativeLanguage] = useState("Türkçe");
-  const [knownLanguages, setKnownLanguages] = useState(["Türkçe"]);
+function ProfileEditSection({ user, isPublisher, profileData, reloadProfile }) {
+  const languageOptions = [
+    "Türkçe",
+    "English",
+    "العربية",
+    "Deutsch",
+    "Français",
+    "Español",
+    "Русский",
+    "فارسی",
+    "اردو",
+    "中文",
+    "Bahasa Indonesia",
+    "Malay",
+  ];
+
+  const initialKnownLanguages = Array.isArray(profileData?.known_languages)
+    ? profileData.known_languages
+    : ["Türkçe"];
+
+  const [nativeLanguage, setNativeLanguage] = useState(
+    profileData?.native_language || "Türkçe"
+  );
+  const [knownLanguages, setKnownLanguages] = useState(initialKnownLanguages);
   const [newLanguage, setNewLanguage] = useState("");
+  const [savingLanguage, setSavingLanguage] = useState(false);
+  const [languageMessage, setLanguageMessage] = useState("");
+
+  useEffect(() => {
+    setNativeLanguage(profileData?.native_language || "Türkçe");
+
+    if (Array.isArray(profileData?.known_languages)) {
+      setKnownLanguages(profileData.known_languages);
+    } else {
+      setKnownLanguages(["Türkçe"]);
+    }
+  }, [profileData]);
 
   function addKnownLanguage() {
     if (!newLanguage.trim()) return;
@@ -414,6 +459,47 @@ function ProfileEditSection({ user, isPublisher }) {
 
   function removeLanguage(lang) {
     setKnownLanguages(knownLanguages.filter((item) => item !== lang));
+  }
+
+  async function saveLanguageSettings() {
+    try {
+      setSavingLanguage(true);
+      setLanguageMessage("");
+
+      const finalKnownLanguages = knownLanguages.includes(nativeLanguage)
+        ? knownLanguages
+        : [nativeLanguage, ...knownLanguages];
+
+      const res = await fetch("/api/update-language", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          nativeLanguage,
+          knownLanguages: finalKnownLanguages,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setLanguageMessage(data.error || "Dil ayarları kaydedilemedi.");
+        return;
+      }
+
+      setKnownLanguages(finalKnownLanguages);
+      setLanguageMessage("Dil ayarları kaydedildi.");
+
+      if (reloadProfile) {
+        await reloadProfile();
+      }
+    } catch (error) {
+      console.error("Dil ayarı kaydetme hatası:", error);
+      setLanguageMessage("Dil ayarları kaydedilirken hata oluştu.");
+    } finally {
+      setSavingLanguage(false);
+    }
   }
 
   return (
@@ -439,18 +525,11 @@ function ProfileEditSection({ user, isPublisher }) {
           onChange={(e) => setNativeLanguage(e.target.value)}
           style={styles.input}
         >
-          <option>Türkçe</option>
-          <option>English</option>
-          <option>العربية</option>
-          <option>Deutsch</option>
-          <option>Français</option>
-          <option>Español</option>
-          <option>Русский</option>
-          <option>فارسی</option>
-          <option>اردو</option>
-          <option>中文</option>
-          <option>Bahasa Indonesia</option>
-          <option>Malay</option>
+          {languageOptions.map((language) => (
+            <option key={language} value={language}>
+              {language}
+            </option>
+          ))}
         </select>
 
         <p style={styles.smallMuted}>
@@ -467,12 +546,18 @@ function ProfileEditSection({ user, isPublisher }) {
         <label style={styles.label}>Bildiği Diller</label>
 
         <div style={styles.languageRow}>
-          <input
+          <select
             value={newLanguage}
             onChange={(e) => setNewLanguage(e.target.value)}
-            placeholder="Dil ekle"
             style={styles.input}
-          />
+          >
+            <option value="">Dil seç</option>
+            {languageOptions.map((language) => (
+              <option key={language} value={language}>
+                {language}
+              </option>
+            ))}
+          </select>
 
           <button onClick={addKnownLanguage} style={styles.primaryButton}>
             Ekle
@@ -493,6 +578,18 @@ function ProfileEditSection({ user, isPublisher }) {
         <p style={styles.smallMuted}>
           Anlaşma metinleri, başvuru süreci ve site dili kullanıcının ana diline göre gösterilecek.
         </p>
+
+        <button
+          onClick={saveLanguageSettings}
+          disabled={savingLanguage}
+          style={styles.primaryButton}
+        >
+          {savingLanguage ? "Kaydediliyor..." : "Dil Ayarlarını Kaydet"}
+        </button>
+
+        {languageMessage && (
+          <div style={styles.notice}>{languageMessage}</div>
+        )}
       </div>
     </div>
   );
