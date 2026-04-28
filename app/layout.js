@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import Navbar from "./components/Navbar";
 import CreateProfile from "./components/CreateProfile";
+import { LanguageProvider } from "./context/LanguageContext";
 
 export const metadata = {
   title: "Kevser",
@@ -12,9 +13,11 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="tr">
         <body style={{ margin: 0, background: "black" }}>
-          <CreateProfile />
-          <Navbar />
-          {children}
+          <LanguageProvider>
+            <CreateProfile />
+            <Navbar />
+            {children}
+          </LanguageProvider>
         </body>
       </html>
     </ClerkProvider>
