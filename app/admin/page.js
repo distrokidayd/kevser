@@ -19,6 +19,64 @@ export default function AdminPanel() {
   const [sealLoading, setSealLoading] = useState(false);
   const [sealMessage, setSealMessage] = useState("");
 
+  const [agreementText, setAgreementText] = useState("");
+  const [agreementLoading, setAgreementLoading] = useState(false);
+  const [agreementMessage, setAgreementMessage] = useState("");
+
+  useEffect(() => {
+    loadApplications();
+    loadReports();
+    loadAppeals();
+    loadAgreement();
+  }, []);
+
+  const loadAgreement = async () => {
+    try {
+      setAgreementLoading(true);
+      const res = await fetch("/api/get-agreement");
+      const data = await res.json();
+
+      if (data.success) {
+        setAgreementText(data.agreementText || "");
+      }
+    } catch (error) {
+      console.error("Anlaşma metni alınamadı:", error);
+    } finally {
+      setAgreementLoading(false);
+    }
+  };
+
+  const saveAgreement = async () => {
+    try {
+      setAgreementLoading(true);
+      setAgreementMessage("");
+
+      const res = await fetch("/api/admin/update-agreement", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          agreementText
+        })
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setAgreementMessage(data.error || "Anlaşma metni kaydedilemedi.");
+        return;
+      }
+
+      setAgreementMessage("Anlaşma metni başarıyla güncellendi.");
+    } catch (error) {
+      console.error("Anlaşma kaydetme hatası:", error);
+      setAgreementMessage("Anlaşma metni kaydedilirken hata oluştu.");
+    } finally {
+      setAgreementLoading(false);
+    }
+  };
+
   const loadApplications = async () => {
     try {
       setApplicationsLoading(true);
@@ -82,12 +140,6 @@ export default function AdminPanel() {
       setAppealsLoading(false);
     }
   };
-
-  useEffect(() => {
-    loadApplications();
-    loadReports();
-    loadAppeals();
-  }, []);
 
   const resolveReport = async (reportId, action) => {
     try {
@@ -190,64 +242,37 @@ export default function AdminPanel() {
         <p style={styles.smallTitle}>Kevser Yayın Evi</p>
         <h1 style={styles.title}>Admin Paneli</h1>
         <p style={styles.subtitle}>
-          Kullanıcı, yayıncı, şikayet, itiraz, kitap ve mühür kodu yönetimi
+          Kullanıcı, yayıncı, şikayet, itiraz, kitap, mühür kodu ve platform ayarları yönetimi
         </p>
       </section>
 
       <section style={styles.tabs}>
-        <button
-          style={activeTab === "dashboard" ? styles.activeTab : styles.tab}
-          onClick={() => setActiveTab("dashboard")}
-        >
+        <button style={activeTab === "dashboard" ? styles.activeTab : styles.tab} onClick={() => setActiveTab("dashboard")}>
           Admin Dashboard
         </button>
 
-        <button
-          style={
-            activeTab === "publisherApplications"
-              ? styles.activeTab
-              : styles.tab
-          }
-          onClick={() => {
-            setActiveTab("publisherApplications");
-            loadApplications();
-          }}
-        >
+        <button style={activeTab === "publisherApplications" ? styles.activeTab : styles.tab} onClick={() => { setActiveTab("publisherApplications"); loadApplications(); }}>
           Yayıncı Başvuruları
         </button>
 
-        <button
-          style={activeTab === "reports" ? styles.activeTab : styles.tab}
-          onClick={() => {
-            setActiveTab("reports");
-            loadReports();
-          }}
-        >
+        <button style={activeTab === "reports" ? styles.activeTab : styles.tab} onClick={() => { setActiveTab("reports"); loadReports(); }}>
           Şikayet Havuzu
         </button>
 
-        <button
-          style={activeTab === "appeals" ? styles.activeTab : styles.tab}
-          onClick={() => {
-            setActiveTab("appeals");
-            loadAppeals();
-          }}
-        >
+        <button style={activeTab === "appeals" ? styles.activeTab : styles.tab} onClick={() => { setActiveTab("appeals"); loadAppeals(); }}>
           İtirazlar
         </button>
 
-        <button
-          style={activeTab === "books" ? styles.activeTab : styles.tab}
-          onClick={() => setActiveTab("books")}
-        >
+        <button style={activeTab === "books" ? styles.activeTab : styles.tab} onClick={() => setActiveTab("books")}>
           Kitap Yönetimi
         </button>
 
-        <button
-          style={activeTab === "seal" ? styles.activeTab : styles.tab}
-          onClick={() => setActiveTab("seal")}
-        >
+        <button style={activeTab === "seal" ? styles.activeTab : styles.tab} onClick={() => setActiveTab("seal")}>
           Mühür Kodu
+        </button>
+
+        <button style={activeTab === "settings" ? styles.activeTab : styles.tab} onClick={() => { setActiveTab("settings"); loadAgreement(); }}>
+          Platform Ayarları
         </button>
       </section>
 
@@ -272,8 +297,8 @@ export default function AdminPanel() {
             </div>
 
             <div style={styles.infoBox}>
-              <h3>Kitap Sistemi</h3>
-              <p>Kitaplar, mühür kodları ve kullanıcı kitap erişimleri yönetilecek.</p>
+              <h3>Platform Ayarları</h3>
+              <p>Yayıncı anlaşma metni ve site ayarları buradan düzenlenecek.</p>
             </div>
           </div>
         </section>
@@ -294,9 +319,7 @@ export default function AdminPanel() {
             </button>
           </div>
 
-          {applicationsLoading && (
-            <p style={styles.emptyText}>Başvurular yükleniyor...</p>
-          )}
+          {applicationsLoading && <p style={styles.emptyText}>Başvurular yükleniyor...</p>}
 
           {!applicationsLoading && applications.length === 0 && (
             <p style={styles.emptyText}>Henüz yayıncı başvurusu yok.</p>
@@ -307,80 +330,24 @@ export default function AdminPanel() {
               <div key={application.id} style={styles.reportCard}>
                 <div style={styles.reportTop}>
                   <span style={styles.badge}>Yayıncı Başvurusu</span>
-                  <span style={styles.status}>
-                    {application.status || "pending"}
-                  </span>
+                  <span style={styles.status}>{application.status || "pending"}</span>
                 </div>
 
-                <p>
-                  <strong>Başvuru ID:</strong> {application.id}
-                </p>
-
-                <p>
-                  <strong>Kullanıcı ID:</strong> {application.user_id}
-                </p>
-
-                <p>
-                  <strong>Ad Soyad:</strong> {application.full_name}
-                </p>
-
-                <p>
-                  <strong>E-posta:</strong> {application.email}
-                </p>
-
-                <p>
-                  <strong>Telefon:</strong> {application.phone || "Yok"}
-                </p>
-
-                <p>
-                  <strong>Adres:</strong> {application.address || "Yok"}
-                </p>
-
-                <p>
-                  <strong>Müstear İsim:</strong>{" "}
-                  {application.pen_name || "Yok"}
-                </p>
-
-                <p>
-                  <strong>Dini Seçim:</strong>{" "}
-                  {application.religion || "Yok"}
-                </p>
-
-                <p>
-                  <strong>Mezhep:</strong>{" "}
-                  {application.denomination || "Yok"}
-                </p>
-
-                <p>
-                  <strong>Tecrübe:</strong>{" "}
-                  {application.experience || "Belirtilmemiş"}
-                </p>
-
-                <p>
-                  <strong>Başvuru Sebebi:</strong> {application.reason}
-                </p>
-
-                <p>
-                  <strong>Oluşturulma:</strong>{" "}
-                  {application.created_at
-                    ? new Date(application.created_at).toLocaleString("tr-TR")
-                    : "Tarih yok"}
-                </p>
+                <p><strong>Başvuru ID:</strong> {application.id}</p>
+                <p><strong>Kullanıcı ID:</strong> {application.user_id}</p>
+                <p><strong>Ad Soyad:</strong> {application.full_name}</p>
+                <p><strong>E-posta:</strong> {application.email}</p>
+                <p><strong>Telefon:</strong> {application.phone || "Yok"}</p>
+                <p><strong>Tecrübe / Sosyal Bilgiler:</strong></p>
+                <pre style={styles.preBox}>{application.experience || "Belirtilmemiş"}</pre>
+                <p><strong>Başvuru Sebebi:</strong> {application.reason}</p>
 
                 <div style={styles.adminActions}>
-                  <button
-                    style={styles.restoreButton}
-                    onClick={() =>
-                      resolveApplication(application.id, "approve")
-                    }
-                  >
+                  <button style={styles.restoreButton} onClick={() => resolveApplication(application.id, "approve")}>
                     Yayıncı Olarak Onayla
                   </button>
 
-                  <button
-                    style={styles.keepSuspendedButton}
-                    onClick={() => resolveApplication(application.id, "reject")}
-                  >
+                  <button style={styles.keepSuspendedButton} onClick={() => resolveApplication(application.id, "reject")}>
                     Başvuruyu Reddet
                   </button>
                 </div>
@@ -396,7 +363,7 @@ export default function AdminPanel() {
             <div>
               <h2 style={styles.sectionTitle}>Admin Şikayet Havuzu</h2>
               <p style={styles.sectionDesc}>
-                Yayıncı havuzundan gelen şikayetler, oy geçmişi ve askıya alınan içerikler burada izlenir.
+                Yayıncı havuzundan gelen şikayetler burada izlenir.
               </p>
             </div>
 
@@ -405,9 +372,7 @@ export default function AdminPanel() {
             </button>
           </div>
 
-          {reportsLoading && (
-            <p style={styles.emptyText}>Şikayetler yükleniyor...</p>
-          )}
+          {reportsLoading && <p style={styles.emptyText}>Şikayetler yükleniyor...</p>}
 
           {!reportsLoading && reports.length === 0 && (
             <p style={styles.emptyText}>Şikayet kaydı bulunamadı.</p>
@@ -428,12 +393,6 @@ export default function AdminPanel() {
                   <p><strong>Report ID:</strong> {report.id}</p>
                   <p><strong>İçerik ID:</strong> {report.content_id || "Belirtilmemiş"}</p>
                   <p><strong>Şikayet Sebebi:</strong> {report.reason || "Sebep girilmemiş"}</p>
-                  <p>
-                    <strong>Oluşturulma:</strong>{" "}
-                    {report.created_at
-                      ? new Date(report.created_at).toLocaleString("tr-TR")
-                      : "Tarih yok"}
-                  </p>
 
                   <div style={styles.voteSummary}>
                     <span style={styles.approveCount}>Onay: {approveCount}</span>
@@ -441,17 +400,11 @@ export default function AdminPanel() {
                   </div>
 
                   <div style={styles.adminActions}>
-                    <button
-                      style={styles.keepSuspendedButton}
-                      onClick={() => resolveReport(report.id, "keep_suspended")}
-                    >
+                    <button style={styles.keepSuspendedButton} onClick={() => resolveReport(report.id, "keep_suspended")}>
                       Askıda Bırak
                     </button>
 
-                    <button
-                      style={styles.restoreButton}
-                      onClick={() => resolveReport(report.id, "restore")}
-                    >
+                    <button style={styles.restoreButton} onClick={() => resolveReport(report.id, "restore")}>
                       İçeriği Geri Aç
                     </button>
                   </div>
@@ -477,9 +430,7 @@ export default function AdminPanel() {
             </button>
           </div>
 
-          {appealsLoading && (
-            <p style={styles.emptyText}>İtirazlar yükleniyor...</p>
-          )}
+          {appealsLoading && <p style={styles.emptyText}>İtirazlar yükleniyor...</p>}
 
           {!appealsLoading && appeals.length === 0 && (
             <p style={styles.emptyText}>Henüz itiraz yok.</p>
@@ -498,25 +449,13 @@ export default function AdminPanel() {
                 <p><strong>Contribution ID:</strong> {appeal.contribution_id || "Belirtilmemiş"}</p>
                 <p><strong>Kullanıcı:</strong> {appeal.user_id || "Bilinmiyor"}</p>
                 <p><strong>İtiraz Sebebi:</strong> {appeal.reason || "Sebep girilmemiş"}</p>
-                <p>
-                  <strong>Oluşturulma:</strong>{" "}
-                  {appeal.created_at
-                    ? new Date(appeal.created_at).toLocaleString("tr-TR")
-                    : "Tarih yok"}
-                </p>
 
                 <div style={styles.adminActions}>
-                  <button
-                    style={styles.keepSuspendedButton}
-                    onClick={() => resolveAppeal(appeal.id, "reject")}
-                  >
+                  <button style={styles.keepSuspendedButton} onClick={() => resolveAppeal(appeal.id, "reject")}>
                     İtirazı Reddet
                   </button>
 
-                  <button
-                    style={styles.restoreButton}
-                    onClick={() => resolveAppeal(appeal.id, "accept")}
-                  >
+                  <button style={styles.restoreButton} onClick={() => resolveAppeal(appeal.id, "accept")}>
                     İtirazı Kabul Et
                   </button>
                 </div>
@@ -549,11 +488,7 @@ export default function AdminPanel() {
               placeholder="Örn: omerhayyam-rubailer"
             />
 
-            <button
-              style={styles.primaryButton}
-              onClick={createSealCode}
-              disabled={sealLoading}
-            >
+            <button style={styles.primaryButton} onClick={createSealCode} disabled={sealLoading}>
               {sealLoading ? "Oluşturuluyor..." : "Mühür Kodu Oluştur"}
             </button>
 
@@ -564,6 +499,42 @@ export default function AdminPanel() {
                 <p style={styles.sealLabel}>Oluşturulan Mühür Kodu</p>
                 <strong style={styles.sealCode}>{sealCode}</strong>
               </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {activeTab === "settings" && (
+        <section style={styles.card}>
+          <div style={styles.sectionHeader}>
+            <div>
+              <h2 style={styles.sectionTitle}>Platform Ayarları</h2>
+              <p style={styles.sectionDesc}>
+                Yayıncı başvuru sözleşmesi ve platform metinleri buradan düzenlenir.
+              </p>
+            </div>
+
+            <button style={styles.refreshButton} onClick={loadAgreement}>
+              Yenile
+            </button>
+          </div>
+
+          <div style={styles.formBoxWide}>
+            <label style={styles.label}>Yayıncı / Stüdyo Anlaşma Metni</label>
+
+            <textarea
+              style={styles.textarea}
+              value={agreementText}
+              onChange={(e) => setAgreementText(e.target.value)}
+              placeholder="Yayıncı anlaşma metnini yazın..."
+            />
+
+            <button style={styles.primaryButton} onClick={saveAgreement} disabled={agreementLoading}>
+              {agreementLoading ? "Kaydediliyor..." : "Anlaşma Metnini Kaydet"}
+            </button>
+
+            {agreementMessage && (
+              <p style={styles.message}>{agreementMessage}</p>
             )}
           </div>
         </section>
@@ -758,6 +729,13 @@ const styles = {
     borderRadius: "14px",
     padding: "20px"
   },
+  formBoxWide: {
+    maxWidth: "900px",
+    background: "#fff",
+    border: "1px solid #e5d6bd",
+    borderRadius: "14px",
+    padding: "20px"
+  },
   label: {
     display: "block",
     fontWeight: "700",
@@ -772,8 +750,19 @@ const styles = {
     fontSize: "15px",
     boxSizing: "border-box"
   },
-  primaryButton: {
+  textarea: {
     width: "100%",
+    minHeight: "260px",
+    padding: "12px",
+    borderRadius: "10px",
+    border: "1px solid #d8c7aa",
+    marginBottom: "12px",
+    fontSize: "15px",
+    boxSizing: "border-box",
+    fontFamily: "Arial, sans-serif",
+    lineHeight: "1.6"
+  },
+  primaryButton: {
     padding: "12px 16px",
     borderRadius: "10px",
     border: "none",
@@ -803,5 +792,13 @@ const styles = {
     fontSize: "24px",
     letterSpacing: "2px",
     color: "#24180f"
+  },
+  preBox: {
+    whiteSpace: "pre-wrap",
+    background: "#f6f1e8",
+    border: "1px solid #ead8bd",
+    borderRadius: "12px",
+    padding: "12px",
+    color: "#3b2f20"
   }
 };
