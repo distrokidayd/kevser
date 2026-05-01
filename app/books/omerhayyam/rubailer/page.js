@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import TranslatedContent from "@/app/components/TranslatedContent";
 
 export default function BookPage() {
   const [expandedPanel, setExpandedPanel] = useState(null);
@@ -193,6 +194,7 @@ export default function BookPage() {
       created_at: new Date().toISOString(),
       score: 18,
       status: "active",
+      source_language: "Türkçe",
     },
   ];
 
@@ -222,9 +224,7 @@ export default function BookPage() {
                   Bu alana kitabı hesabına eklemiş üyeler yorum, tahlil ve şerh
                   gönderebilir.
                 </p>
-                <p>
-                  Katkılar güçlü, anlamlı ve kitapla ilişkili olmalıdır.
-                </p>
+                <p>Katkılar güçlü, anlamlı ve kitapla ilişkili olmalıdır.</p>
                 <p>
                   Yorumlar puan sırasına göre yükselir; eşit puanda yeni olan
                   üstte görünür.
@@ -346,7 +346,9 @@ export default function BookPage() {
                         {new Date(item.created_at).toLocaleString("tr-TR")}
                       </div>
 
-                      <p style={styles.commentText}>{item.content}</p>
+                      <div style={styles.commentText}>
+                        <TranslatedContent contribution={item} />
+                      </div>
                     </div>
 
                     <div style={styles.score}>Puan: {item.score || 0}</div>
@@ -371,41 +373,42 @@ export default function BookPage() {
                     </div>
                   )}
 
-                  {!item.id?.startsWith("demo") && item.status !== "suspended" && (
-                    <div style={styles.actions}>
-                      <button
-                        onClick={() => voteContribution(item.id, 1)}
-                        style={styles.smallButton}
-                      >
-                        Yorumu Yukarı Çıkar
-                      </button>
+                  {!item.id?.startsWith("demo") &&
+                    item.status !== "suspended" && (
+                      <div style={styles.actions}>
+                        <button
+                          onClick={() => voteContribution(item.id, 1)}
+                          style={styles.smallButton}
+                        >
+                          Yorumu Yukarı Çıkar
+                        </button>
 
-                      <button
-                        onClick={() => voteContribution(item.id, -1)}
-                        style={styles.smallButton}
-                      >
-                        Yorumu Aşağı İndir
-                      </button>
+                        <button
+                          onClick={() => voteContribution(item.id, -1)}
+                          style={styles.smallButton}
+                        >
+                          Yorumu Aşağı İndir
+                        </button>
 
-                      <button
-                        onClick={() => startDiscussion(item.id)}
-                        style={styles.greenButton}
-                      >
-                        Tartışma Başlat
-                      </button>
+                        <button
+                          onClick={() => startDiscussion(item.id)}
+                          style={styles.greenButton}
+                        >
+                          Tartışma Başlat
+                        </button>
 
-                      <button
-                        onClick={() =>
-                          reportContent({
-                            contribution_id: item.id,
-                          })
-                        }
-                        style={styles.redButton}
-                      >
-                        Yayıncı Havuzuna Şikayet Olarak İlet
-                      </button>
-                    </div>
-                  )}
+                        <button
+                          onClick={() =>
+                            reportContent({
+                              contribution_id: item.id,
+                            })
+                          }
+                          style={styles.redButton}
+                        >
+                          Yayıncı Havuzuna Şikayet Olarak İlet
+                        </button>
+                      </div>
+                    )}
                 </article>
               ))}
 
@@ -588,7 +591,9 @@ export default function BookPage() {
                   {new Date(item.created_at).toLocaleString("tr-TR")}
                 </div>
 
-                <p>{item.content}</p>
+                <div style={styles.commentText}>
+                  <TranslatedContent contribution={item} />
+                </div>
               </article>
             ))}
           </section>
