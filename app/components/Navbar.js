@@ -2,16 +2,25 @@
 
 import Link from "next/link";
 import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
+import { useLanguage } from "../context/LanguageContext";
+import { translations } from "../lib/translations";
+import { useParams } from "next/navigation";
 
 export default function Navbar() {
   const { isSignedIn } = useUser();
+  const { siteLanguage } = useLanguage();
+  const params = useParams();
+
+  const lang = params?.lang || "tr";
+
+  const t = translations[siteLanguage] || translations["Türkçe"];
 
   const maideVakfiUrl = "https://maide.kevser.com";
 
   return (
     <nav style={styles.navbar}>
       <div style={styles.left}>
-        <Link href="/" style={styles.brand}>
+        <Link href={`/${lang}`} style={styles.brand}>
           Kevser
         </Link>
 
@@ -21,29 +30,12 @@ export default function Navbar() {
       </div>
 
       <div style={styles.links}>
-        <Link href="/books" style={styles.link}>
-          Kitaplar / Chat
-        </Link>
-
-        <Link href="/store" style={styles.link}>
-          Mağaza
-        </Link>
-
-        <Link href="/publishers" style={styles.link}>
-          Yayınevleri
-        </Link>
-
-        <Link href="/audiobooks" style={styles.link}>
-          Sesli Kitaplar
-        </Link>
-
-        <Link href="/articles" style={styles.link}>
-          Makaleler
-        </Link>
-
-        <Link href="/profile" style={styles.link}>
-          Profil
-        </Link>
+        <Link href={`/${lang}/books`} style={styles.link}>{t.books}</Link>
+        <Link href={`/${lang}/store`} style={styles.link}>{t.store}</Link>
+        <Link href={`/${lang}/publishers`} style={styles.link}>{t.publishers}</Link>
+        <Link href={`/${lang}/audiobooks`} style={styles.link}>{t.audiobooks}</Link>
+        <Link href={`/${lang}/articles`} style={styles.link}>{t.articles}</Link>
+        <Link href={`/${lang}/profile`} style={styles.link}>{t.profile}</Link>
       </div>
 
       <div style={styles.auth}>
@@ -52,7 +44,7 @@ export default function Navbar() {
         ) : (
           <>
             <SignInButton mode="modal">
-              <button style={styles.loginButton}>Giriş Yap</button>
+              <button style={styles.loginButton}>Giriş</button>
             </SignInButton>
 
             <SignUpButton mode="modal">
@@ -75,51 +67,37 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: "20px",
-    boxSizing: "border-box",
-    position: "sticky",
-    top: 0,
-    zIndex: 100,
   },
   left: {
     display: "flex",
     alignItems: "center",
     gap: "14px",
-    flexShrink: 0,
   },
   brand: {
     color: "#f5b400",
     textDecoration: "none",
     fontSize: "24px",
     fontWeight: "900",
-    letterSpacing: "1px",
   },
   foundationLink: {
     color: "#fff",
     textDecoration: "none",
     fontSize: "14px",
-    fontWeight: "700",
     borderLeft: "1px solid #333",
     paddingLeft: "14px",
   },
   links: {
     display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
     gap: "14px",
-    flexWrap: "wrap",
   },
   link: {
     color: "#e5e5e5",
     textDecoration: "none",
-    fontSize: "14px",
     fontWeight: "700",
   },
   auth: {
     display: "flex",
-    alignItems: "center",
     gap: "10px",
-    flexShrink: 0,
   },
   loginButton: {
     border: "1px solid #333",
@@ -128,15 +106,13 @@ const styles = {
     borderRadius: "10px",
     padding: "9px 12px",
     cursor: "pointer",
-    fontWeight: "700",
   },
   signupButton: {
-    border: "none",
     background: "#f5b400",
     color: "#000",
+    border: "none",
     borderRadius: "10px",
     padding: "9px 12px",
     cursor: "pointer",
-    fontWeight: "900",
   },
 };
