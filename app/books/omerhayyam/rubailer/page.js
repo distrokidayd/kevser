@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import TranslatedContent from "@/app/components/TranslatedContent";
+import TranslatedContent from "../../../components/TranslatedContent";
 
 export default function BookPage() {
   const [expandedPanel, setExpandedPanel] = useState(null);
