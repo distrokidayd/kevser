@@ -1,106 +1,210 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { SignInButton, useUser } from "@clerk/nextjs";
+import { useState } from "react";
 
 export default function ProfilePage() {
-  const { isSignedIn } = useUser();
-  const [books, setBooks] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (isSignedIn) {
-      loadBooks();
-    } else {
-      setLoading(false);
-    }
-  }, [isSignedIn]);
-
-  async function loadBooks() {
-    try {
-      const res = await fetch("/api/get-my-books");
-      const data = await res.json();
-
-      if (data.success) {
-        setBooks(data.books || []);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (!isSignedIn) {
-    return (
-      <main style={styles.page}>
-        <section style={styles.card}>
-          <h1>Profil</h1>
-          <p>Profil sayfasını görmek için giriş yapmalısınız.</p>
-
-          <SignInButton mode="modal">
-            <button style={styles.button}>Giriş Yap</button>
-          </SignInButton>
-        </section>
-      </main>
-    );
-  }
+  const [editMode, setEditMode] = useState(false);
+  const [religion, setReligion] = useState("islam");
+  const [isSect, setIsSect] = useState(false);
+  const [sect, setSect] = useState("");
 
   return (
-    <main style={styles.page}>
-      <h1>Profil</h1>
+    <div style={styles.page}>
+      {/* HEADER */}
+      <div style={styles.header}>
+        <h1>Profil</h1>
+        <button onClick={() => setEditMode(!editMode)} style={styles.button}>
+          {editMode ? "Kaydet" : "Düzenle"}
+        </button>
+      </div>
 
-      <section style={styles.section}>
-        <h2>Kitaplarım</h2>
+      {/* PROFİL BİLGİLERİ */}
+      <div style={styles.card}>
+        <h3>Kimlik Bilgileri</h3>
 
-        {loading && <p>Yükleniyor...</p>}
+        <input style={styles.input} placeholder="Ad" disabled={!editMode} />
+        <input style={styles.input} placeholder="Soyad" disabled={!editMode} />
+        <input style={styles.input} placeholder="Şehir" disabled={!editMode} />
+        <input style={styles.input} placeholder="Ülke" disabled={!editMode} />
+      </div>
 
-        {!loading && books.length === 0 && (
-          <p>Henüz kitabın yok. Mağazadan ekleyebilir veya mühür kodu girebilirsin.</p>
+      {/* DİN ALANI */}
+      <div style={styles.card}>
+        <h3>Din</h3>
+
+        <div style={styles.row}>
+          <button
+            style={religion === "islam" ? styles.active : styles.choice}
+            onClick={() => setReligion("islam")}
+          >
+            İslam
+          </button>
+
+          <button
+            style={religion === "christian" ? styles.active : styles.choice}
+            onClick={() => setReligion("christian")}
+          >
+            Hristiyanlık
+          </button>
+
+          <button
+            style={religion === "jewish" ? styles.active : styles.choice}
+            onClick={() => setReligion("jewish")}
+          >
+            Yahudilik
+          </button>
+
+          <button
+            style={religion === "other" ? styles.active : styles.choice}
+            onClick={() => setReligion("other")}
+          >
+            Diğer
+          </button>
+        </div>
+
+        {/* İSLAM SEÇİLİNCE */}
+        {religion === "islam" && (
+          <>
+            <h4>Fırkalardan mısın?</h4>
+
+            <div style={styles.row}>
+              <button
+                style={!isSect ? styles.active : styles.choice}
+                onClick={() => setIsSect(false)}
+              >
+                Müslüman
+              </button>
+
+              <button
+                style={isSect ? styles.active : styles.choice}
+                onClick={() => setIsSect(true)}
+              >
+                Fırkalardanım
+              </button>
+            </div>
+
+            {isSect && (
+              <>
+                <select
+                  style={styles.input}
+                  onChange={(e) => setSect(e.target.value)}
+                >
+                  <option>Fırkanı seç</option>
+                  <option>Hanefi</option>
+                  <option>Şafii</option>
+                  <option>Maliki</option>
+                  <option>Hanbeli</option>
+                  <option>Caferi</option>
+                  <option>Diğer</option>
+                </select>
+
+                <input
+                  style={styles.input}
+                  placeholder="Diğer ise yaz"
+                />
+              </>
+            )}
+          </>
         )}
 
-        <div style={styles.grid}>
-          {books.map((book) => (
-            <div key={book.id} style={styles.card}>
-              <h3>{book.book_slug}</h3>
-              <p>Mühür: {book.seal_code}</p>
-            </div>
-          ))}
+        <p style={styles.warning}>
+          Not: Din bilgisi en fazla 2 kez değiştirilebilir.
+        </p>
+      </div>
+
+      {/* KİTAPLAR */}
+      <div style={styles.card}>
+        <h3>Kitaplarım</h3>
+
+        <div style={styles.book}>
+          <strong>Rubailer</strong>
+          <button style={styles.smallBtn}>Tahlil'e Git</button>
         </div>
-      </section>
-    </main>
+
+        <input style={styles.input} placeholder="Mühür kodu gir" />
+        <button style={styles.button}>Kitap Ekle</button>
+      </div>
+
+      {/* CÜZDAN */}
+      <div style={styles.card}>
+        <h3>Cüzdan</h3>
+
+        <p>Bakiye: $0.00</p>
+        <p>Hediye: $5.00</p>
+
+        <button style={styles.button}>Kripto ile yükle</button>
+
+        <input style={styles.input} placeholder="Kupon kodu gir" />
+      </div>
+    </div>
   );
 }
 
 const styles = {
   page: {
-    minHeight: "100vh",
-    background: "black",
-    color: "white",
     padding: "40px",
+    background: "#f5fbff",
+    minHeight: "100vh"
   },
-  section: {
-    marginTop: "20px",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "15px",
-    marginTop: "15px",
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center"
   },
   card: {
-    border: "1px solid #333",
-    borderRadius: "12px",
+    background: "white",
     padding: "20px",
-    background: "#111",
+    marginTop: "20px",
+    borderRadius: "12px"
+  },
+  input: {
+    display: "block",
+    width: "100%",
+    padding: "10px",
+    marginTop: "10px",
+    borderRadius: "8px",
+    border: "1px solid #ccc"
   },
   button: {
-    background: "#f5b400",
-    color: "black",
+    padding: "10px 15px",
+    background: "#0fb7a6",
+    color: "white",
     border: "none",
-    borderRadius: "10px",
-    padding: "12px 16px",
-    cursor: "pointer",
-    fontWeight: "bold",
+    borderRadius: "8px",
+    cursor: "pointer"
   },
+  smallBtn: {
+    marginLeft: "10px",
+    padding: "5px 10px"
+  },
+  row: {
+    display: "flex",
+    gap: "10px",
+    marginTop: "10px",
+    flexWrap: "wrap"
+  },
+  choice: {
+    padding: "10px",
+    border: "1px solid #ccc",
+    borderRadius: "8px",
+    background: "white",
+    cursor: "pointer"
+  },
+  active: {
+    padding: "10px",
+    borderRadius: "8px",
+    background: "#0fb7a6",
+    color: "white",
+    cursor: "pointer"
+  },
+  warning: {
+    marginTop: "10px",
+    color: "red",
+    fontSize: "12px"
+  },
+  book: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: "10px"
+  }
 };
