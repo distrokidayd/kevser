@@ -22,12 +22,34 @@ export default function ProfilePage({ params }) {
   const [isSect, setIsSect] = useState(false);
   const [sect, setSect] = useState("");
 
+  const [publisherFormOpen, setPublisherFormOpen] = useState(false);
+  const [agreementText, setAgreementText] = useState("");
+  const [publisherLoading, setPublisherLoading] = useState(false);
+  const [publisherMessage, setPublisherMessage] = useState("");
+  const [publisherForm, setPublisherForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    website: "",
+    socialLinks: "",
+    experience: "",
+    reason: "",
+    agreementAccepted: false,
+    voiceFileName: "",
+  });
+
   useEffect(() => {
     if (isSignedIn) {
       loadBooks();
       loadNotifications();
+      loadAgreement();
+      setPublisherForm((prev) => ({
+        ...prev,
+        fullName: user?.fullName || user?.firstName || "",
+        email: user?.primaryEmailAddress?.emailAddress || "",
+      }));
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, user]);
 
   async function loadBooks() {
     try {
@@ -47,6 +69,18 @@ export default function ProfilePage({ params }) {
       const res = await fetch("/api/notifications");
       const data = await res.json();
       if (data.success) setNotifications(data.notifications || []);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function loadAgreement() {
+    try {
+      const res = await fetch("/api/get-agreement");
+      const data = await res.json();
+      if (data.success) {
+        setAgreementText(data.agreementText || "");
+      }
     } catch (err) {
       console.error(err);
     }
@@ -76,6 +110,67 @@ export default function ProfilePage({ params }) {
     } catch (err) {
       console.error(err);
       setSealMessage("Bir hata oluştu.");
+    }
+  }
+
+  function updatePublisherField(field, value) {
+    setPublisherForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }
+
+  async function submitPublisherApplication() {
+    try {
+      setPublisherMessage("");
+
+      if (!publisherForm.fullName || !publisherForm.email || !publisherForm.reason) {
+        setPublisherMessage("Ad soyad, e-posta ve başvuru sebebi zorunludur.");
+        return;
+      }
+
+      if (!publisherForm.agreementAccepted) {
+        setPublisherMessage("Anlaşma metnini kabul etmelisiniz.");
+        return;
+      }
+
+      if (!publisherForm.voiceFileName) {
+        setPublisherMessage("Sesli kabul dosyası yüklemelisiniz.");
+        return;
+      }
+
+      setPublisherLoading(true);
+
+      const res = await fetch("/api/publisher/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: publisherForm.fullName,
+          email: publisherForm.email,
+          phone: publisherForm.phone,
+          website: publisherForm.website,
+          socialLinks: publisherForm.socialLinks,
+          experience: publisherForm.experience,
+          reason: publisherForm.reason,
+          agreementAccepted: publisherForm.agreementAccepted,
+          voiceAcceptanceNote: `Ses dosyası: ${publisherForm.voiceFileName}`,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setPublisherMessage(data.error || "Başvuru gönderilemedi.");
+        return;
+      }
+
+      setPublisherMessage("Başvurunuz admin paneline gönderildi.");
+      setPublisherFormOpen(false);
+    } catch (err) {
+      console.error(err);
+      setPublisherMessage("Başvuru gönderilirken hata oluştu.");
+    } finally {
+      setPublisherLoading(false);
     }
   }
 
@@ -211,12 +306,7 @@ export default function ProfilePage({ params }) {
               />
 
               <section style={styles.messageGrid}>
-                <MessageBox
-                  id="sent"
-                  title="Arkadaşlara Gönderilen Mesajlar"
-                  expandedBox={expandedBox}
-                  setExpandedBox={setExpandedBox}
-                >
+                <MessageBox id="sent" title="Arkadaşlara Gönderilen Mesajlar" expandedBox={expandedBox} setExpandedBox={setExpandedBox}>
                   {sentMessages.map((msg) => (
                     <MessageCard key={msg.id} meta={`Kime: ${msg.to} • ${msg.time}`}>
                       {msg.text}
@@ -224,12 +314,7 @@ export default function ProfilePage({ params }) {
                   ))}
                 </MessageBox>
 
-                <MessageBox
-                  id="incoming"
-                  title="Arkadaşlardan Gelen Mesajlar"
-                  expandedBox={expandedBox}
-                  setExpandedBox={setExpandedBox}
-                >
+                <MessageBox id="incoming" title="Arkadaşlardan Gelen Mesajlar" expandedBox={expandedBox} setExpandedBox={setExpandedBox}>
                   {incomingMessages.map((msg) => (
                     <MessageCard key={msg.id} meta={`Kimden: ${msg.from} • ${msg.time}`}>
                       {msg.text}
@@ -240,12 +325,7 @@ export default function ProfilePage({ params }) {
                   ))}
                 </MessageBox>
 
-                <MessageBox
-                  id="sameBook"
-                  title="Aynı Kitabı Alanlara Mesajlar"
-                  expandedBox={expandedBox}
-                  setExpandedBox={setExpandedBox}
-                >
+                <MessageBox id="sameBook" title="Aynı Kitabı Alanlara Mesajlar" expandedBox={expandedBox} setExpandedBox={setExpandedBox}>
                   {sameBookMessages.map((msg) => (
                     <MessageCard key={msg.id} meta={`${msg.username} • ${msg.book} • ${msg.unread} okunmamış`}>
                       {msg.text}
@@ -258,12 +338,7 @@ export default function ProfilePage({ params }) {
                   ))}
                 </MessageBox>
 
-                <MessageBox
-                  id="community"
-                  title="Topluluğa Çağrı Mesajları"
-                  expandedBox={expandedBox}
-                  setExpandedBox={setExpandedBox}
-                >
+                <MessageBox id="community" title="Topluluğa Çağrı Mesajları" expandedBox={expandedBox} setExpandedBox={setExpandedBox}>
                   {communityMessages.map((msg) => (
                     <MessageCard key={msg.id} meta={`${msg.username} • ${msg.time}`}>
                       {msg.text}
@@ -275,21 +350,11 @@ export default function ProfilePage({ params }) {
                   ))}
                 </MessageBox>
 
-                <MessageBox
-                  id="system"
-                  title="Sistem Mesajları"
-                  expandedBox={expandedBox}
-                  setExpandedBox={setExpandedBox}
-                >
-                  {notifications.length === 0 && (
-                    <p style={styles.muted}>Henüz sistem mesajı yok.</p>
-                  )}
+                <MessageBox id="system" title="Sistem Mesajları" expandedBox={expandedBox} setExpandedBox={setExpandedBox}>
+                  {notifications.length === 0 && <p style={styles.muted}>Henüz sistem mesajı yok.</p>}
 
                   {notifications.map((n) => (
-                    <MessageCard
-                      key={n.id}
-                      meta={new Date(n.created_at).toLocaleString("tr-TR")}
-                    >
+                    <MessageCard key={n.id} meta={new Date(n.created_at).toLocaleString("tr-TR")}>
                       <strong>{n.title}</strong>
                       <p>{n.message}</p>
                     </MessageCard>
@@ -301,10 +366,7 @@ export default function ProfilePage({ params }) {
 
           {activeTab === "books" && (
             <>
-              <PanelHeader
-                title="Kitaplarım"
-                desc="Amazon, Google Books veya Kevser mağazasından alınan kitapların mühür kodu burada girilir."
-              />
+              <PanelHeader title="Kitaplarım" desc="Amazon, Google Books veya Kevser mağazasından alınan kitapların mühür kodu burada girilir." />
 
               <section style={styles.twoGrid}>
                 <div style={styles.card}>
@@ -312,9 +374,7 @@ export default function ProfilePage({ params }) {
 
                   {booksLoading && <p style={styles.muted}>Yükleniyor...</p>}
 
-                  {!booksLoading && books.length === 0 && (
-                    <p style={styles.muted}>Henüz hesabınıza eklenmiş kitap yok.</p>
-                  )}
+                  {!booksLoading && books.length === 0 && <p style={styles.muted}>Henüz hesabınıza eklenmiş kitap yok.</p>}
 
                   {(books.length ? books : [{ id: "demo", book_slug: "omerhayyam-rubailer", seal_code: "DEMO-KEV" }]).map((book) => (
                     <div key={book.id} style={styles.bookCard}>
@@ -336,16 +396,9 @@ export default function ProfilePage({ params }) {
 
                 <div style={styles.card}>
                   <h2 style={styles.cardTitle}>Kitap Ekle</h2>
-                  <p style={styles.muted}>
-                    Kitabın içindeki mühür kodunu gir. Sistem kodun hangi kitaba ait olduğunu tanır.
-                  </p>
+                  <p style={styles.muted}>Kitabın içindeki mühür kodunu gir. Sistem kodun hangi kitaba ait olduğunu tanır.</p>
 
-                  <input
-                    style={styles.input}
-                    value={sealCode}
-                    onChange={(e) => setSealCode(e.target.value)}
-                    placeholder="Örn: KEV-7H2M9Q4A"
-                  />
+                  <input style={styles.input} value={sealCode} onChange={(e) => setSealCode(e.target.value)} placeholder="Örn: KEV-7H2M9Q4A" />
 
                   <button onClick={addBookBySeal} style={styles.primaryButton}>
                     Kitabı Hesabıma Ekle
@@ -359,10 +412,7 @@ export default function ProfilePage({ params }) {
 
           {activeTab === "wallet" && (
             <>
-              <PanelHeader
-                title="Cüzdan"
-                desc="Mağazada kullanabileceğin bakiye, hediye para ve kupon alanı."
-              />
+              <PanelHeader title="Cüzdan" desc="Mağazada kullanabileceğin bakiye, hediye para ve kupon alanı." />
 
               <section style={styles.walletGrid}>
                 <div style={styles.card}>
@@ -410,12 +460,7 @@ export default function ProfilePage({ params }) {
 
                 <div style={styles.card}>
                   <h2 style={styles.cardTitle}>İletişim ve Güvenlik</h2>
-                  <input
-                    style={styles.input}
-                    value={user?.primaryEmailAddress?.emailAddress || ""}
-                    disabled
-                    readOnly
-                  />
+                  <input style={styles.input} value={user?.primaryEmailAddress?.emailAddress || ""} disabled readOnly />
                   <input style={styles.input} placeholder="Telefon" disabled={!editMode} />
                   <div style={styles.actionRow}>
                     <button style={styles.primaryButton}>E-posta / Telefonu Güncelle</button>
@@ -446,37 +491,21 @@ export default function ProfilePage({ params }) {
 
                 <div style={styles.cardWide}>
                   <h2 style={styles.cardTitle}>Din</h2>
-                  <p style={styles.muted}>
-                    Din bilgisi profil üzerinden en fazla 2 kez değiştirilebilir.
-                  </p>
+                  <p style={styles.muted}>Din bilgisi profil üzerinden en fazla 2 kez değiştirilebilir.</p>
 
-                  <div style={styles.warning}>
-                    Not: Kişi din bilgisini profilinden en fazla 2 defa değiştirebilir.
-                  </div>
+                  <div style={styles.warning}>Not: Kişi din bilgisini profilinden en fazla 2 defa değiştirebilir.</div>
 
                   <div style={styles.religionGrid}>
-                    <button
-                      style={religion === "islam" ? styles.choiceActive : styles.choice}
-                      onClick={() => setReligion("islam")}
-                    >
+                    <button style={religion === "islam" ? styles.choiceActive : styles.choice} onClick={() => setReligion("islam")}>
                       İslam
                     </button>
-                    <button
-                      style={religion === "christian" ? styles.choiceActive : styles.choice}
-                      onClick={() => setReligion("christian")}
-                    >
+                    <button style={religion === "christian" ? styles.choiceActive : styles.choice} onClick={() => setReligion("christian")}>
                       Hristiyanlık
                     </button>
-                    <button
-                      style={religion === "jewish" ? styles.choiceActive : styles.choice}
-                      onClick={() => setReligion("jewish")}
-                    >
+                    <button style={religion === "jewish" ? styles.choiceActive : styles.choice} onClick={() => setReligion("jewish")}>
                       Yahudilik
                     </button>
-                    <button
-                      style={religion === "other" ? styles.choiceActive : styles.choice}
-                      onClick={() => setReligion("other")}
-                    >
+                    <button style={religion === "other" ? styles.choiceActive : styles.choice} onClick={() => setReligion("other")}>
                       Diğer
                     </button>
                   </div>
@@ -485,16 +514,10 @@ export default function ProfilePage({ params }) {
                     <div style={styles.innerCard}>
                       <h3>Fırkalardan mısın?</h3>
                       <div style={styles.religionGridTwo}>
-                        <button
-                          style={!isSect ? styles.choiceActive : styles.choice}
-                          onClick={() => setIsSect(false)}
-                        >
+                        <button style={!isSect ? styles.choiceActive : styles.choice} onClick={() => setIsSect(false)}>
                           Müslüman
                         </button>
-                        <button
-                          style={isSect ? styles.choiceActive : styles.choice}
-                          onClick={() => setIsSect(true)}
-                        >
+                        <button style={isSect ? styles.choiceActive : styles.choice} onClick={() => setIsSect(true)}>
                           Fırkalardanım
                         </button>
                       </div>
@@ -525,9 +548,7 @@ export default function ProfilePage({ params }) {
                     </div>
                   )}
 
-                  {religion !== "islam" && (
-                    <input style={styles.input} placeholder="Mezhep / gelenek / diğer açıklama" />
-                  )}
+                  {religion !== "islam" && <input style={styles.input} placeholder="Mezhep / gelenek / diğer açıklama" />}
 
                   <button style={styles.primaryButton}>Din Bilgisini Kaydet</button>
                 </div>
@@ -537,18 +558,88 @@ export default function ProfilePage({ params }) {
 
           {activeTab === "publisher" && (
             <>
-              <PanelHeader
-                title="Yayıncı / Stüdyo"
-                desc="Yayıncı başvurusu ve stüdyo erişimi burada yönetilir."
-              />
+              <PanelHeader title="Yayıncı / Stüdyo" desc="Yayıncı başvurusu ve stüdyo erişimi burada yönetilir." />
 
               <section style={styles.twoGrid}>
                 <div style={styles.studioCard}>
                   <h2 style={styles.cardTitle}>Yayıncı Olarak Başvur</h2>
-                  <p style={styles.muted}>
-                    Sosyal medya, website, deneyim, anlaşma metni ve sesli kabul ile başvuru yapılır.
-                  </p>
-                  <button style={styles.primaryButton}>Başvuru Formunu Aç</button>
+                  <p style={styles.muted}>Sosyal medya, website, deneyim, anlaşma metni ve sesli kabul ile başvuru yapılır.</p>
+
+                  <button onClick={() => setPublisherFormOpen(!publisherFormOpen)} style={styles.primaryButton}>
+                    {publisherFormOpen ? "Formu Kapat" : "Başvuru Formunu Aç"}
+                  </button>
+
+                  {publisherMessage && <div style={styles.notice}>{publisherMessage}</div>}
+
+                  {publisherFormOpen && (
+                    <div style={styles.formBox}>
+                      <input style={styles.input} value={publisherForm.fullName} onChange={(e) => updatePublisherField("fullName", e.target.value)} placeholder="Ad Soyad" />
+                      <input style={styles.input} value={publisherForm.email} onChange={(e) => updatePublisherField("email", e.target.value)} placeholder="E-posta" />
+                      <input style={styles.input} value={publisherForm.phone} onChange={(e) => updatePublisherField("phone", e.target.value)} placeholder="Telefon" />
+                      <input style={styles.input} value={publisherForm.website} onChange={(e) => updatePublisherField("website", e.target.value)} placeholder="Website" />
+
+                      <textarea
+                        style={styles.textarea}
+                        value={publisherForm.socialLinks}
+                        onChange={(e) => updatePublisherField("socialLinks", e.target.value)}
+                        placeholder="Sosyal medya hesapları"
+                      />
+
+                      <textarea
+                        style={styles.textarea}
+                        value={publisherForm.experience}
+                        onChange={(e) => updatePublisherField("experience", e.target.value)}
+                        placeholder="Yayıncılık deneyiminiz"
+                      />
+
+                      <textarea
+                        style={styles.textarea}
+                        value={publisherForm.reason}
+                        onChange={(e) => updatePublisherField("reason", e.target.value)}
+                        placeholder="Neden yayıncı olmak istiyorsunuz?"
+                      />
+
+                      <div style={styles.agreementBox}>
+                        <h3>Anlaşma Metni</h3>
+                        <p style={styles.muted}>Bu metin kullanıcının ana diline göre gösterilecek.</p>
+                        <div style={styles.agreementText}>
+                          {agreementText || "Kevser Yayın Evi platform anlaşma metni yükleniyor..."}
+                        </div>
+
+                        <label style={styles.checkboxLabel}>
+                          <input
+                            type="checkbox"
+                            checked={publisherForm.agreementAccepted}
+                            onChange={(e) => updatePublisherField("agreementAccepted", e.target.checked)}
+                          />
+                          Anlaşma metnini okudum ve kabul ediyorum.
+                        </label>
+                      </div>
+
+                      <div style={styles.agreementBox}>
+                        <h3>Sesli Kabul Dosyası</h3>
+                        <p style={styles.muted}>
+                          Lütfen anlaşma metnini sesli olarak kaydedin ve “kabul ettim” diyerek başvurunuzu tamamlayın.
+                        </p>
+
+                        <input
+                          style={styles.input}
+                          type="file"
+                          accept="audio/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) updatePublisherField("voiceFileName", file.name);
+                          }}
+                        />
+
+                        {publisherForm.voiceFileName && <div style={styles.notice}>Yüklenen ses dosyası: {publisherForm.voiceFileName}</div>}
+                      </div>
+
+                      <button onClick={submitPublisherApplication} disabled={publisherLoading} style={styles.primaryButton}>
+                        {publisherLoading ? "Başvuru gönderiliyor..." : "Başvuruyu Gönder"}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div style={styles.card}>
@@ -595,10 +686,7 @@ function MessageBox({ id, title, expandedBox, setExpandedBox, children }) {
     <div style={isExpanded ? styles.messageBoxExpanded : styles.messageBox}>
       <div style={styles.boxTop}>
         <h3>{title}</h3>
-        <button
-          onClick={() => setExpandedBox(isExpanded ? null : id)}
-          style={styles.expandButton}
-        >
+        <button onClick={() => setExpandedBox(isExpanded ? null : id)} style={styles.expandButton}>
           {isExpanded ? "Sayfayı Küçült" : "Sayfayı Büyüt"}
         </button>
       </div>
@@ -617,413 +705,60 @@ function MessageCard({ meta, children }) {
 }
 
 const styles = {
-  page: {
-    minHeight: "100vh",
-    padding: "44px 32px 80px",
-    color: "#163242",
-    background:
-      "radial-gradient(circle at 18% 12%, rgba(255,255,255,.9), transparent 18%), linear-gradient(180deg, #f8fdff 0%, #eef9ff 36%, #eefaf7 68%, #d7f1f5 100%)",
-  },
-  hero: {
-    maxWidth: "1420px",
-    margin: "0 auto 26px",
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "28px",
-    alignItems: "center",
-    background: "rgba(255,255,255,.76)",
-    border: "1px solid rgba(15,59,77,.14)",
-    borderRadius: "34px",
-    padding: "30px",
-    boxShadow: "0 24px 80px rgba(19,68,89,.12)",
-  },
-  kicker: {
-    color: "#0fb7a6",
-    letterSpacing: "4px",
-    textTransform: "uppercase",
-    fontSize: "12px",
-    fontWeight: 900,
-  },
-  title: {
-    fontFamily: "Georgia, serif",
-    color: "#0f3b4d",
-    fontSize: "44px",
-    margin: "10px 0",
-  },
-  muted: {
-    color: "#5d7685",
-    lineHeight: 1.7,
-  },
-  mutedSmall: {
-    color: "#5d7685",
-    fontSize: "13px",
-    lineHeight: 1.6,
-  },
-  profileMini: {
-    display: "flex",
-    alignItems: "center",
-    gap: "16px",
-    minWidth: "330px",
-    background: "rgba(255,255,255,.75)",
-    border: "1px solid rgba(15,59,77,.14)",
-    borderRadius: "24px",
-    padding: "16px",
-  },
-  avatar: {
-    width: "78px",
-    height: "78px",
-    borderRadius: "50%",
-    background: "linear-gradient(135deg,#fff,#0fb7a6)",
-    border: "4px solid white",
-    display: "grid",
-    placeItems: "center",
-    fontSize: "28px",
-    fontWeight: 900,
-    color: "#0f3b4d",
-  },
-  avatarButton: {
-    border: "none",
-    background: "#0fb7a6",
-    color: "white",
-    borderRadius: "999px",
-    padding: "9px 13px",
-    fontWeight: 900,
-    marginTop: "8px",
-    cursor: "pointer",
-  },
-  layout: {
-    maxWidth: "1420px",
-    margin: "0 auto",
-    display: "grid",
-    gridTemplateColumns: "280px minmax(0,1fr)",
-    gap: "24px",
-    alignItems: "start",
-  },
-  sidebar: {
-    position: "sticky",
-    top: "102px",
-    background: "rgba(255,255,255,.76)",
-    border: "1px solid rgba(15,59,77,.14)",
-    borderRadius: "28px",
-    padding: "18px",
-    boxShadow: "0 24px 80px rgba(19,68,89,.12)",
-  },
-  sideTitle: {
-    color: "#0fb7a6",
-    letterSpacing: "3px",
-    textTransform: "uppercase",
-    fontSize: "12px",
-    fontWeight: 900,
-    margin: "4px 0 14px",
-  },
-  sideButton: {
-    width: "100%",
-    border: "1px solid rgba(15,59,77,.14)",
-    background: "white",
-    color: "#0f3b4d",
-    borderRadius: "18px",
-    padding: "16px",
-    marginBottom: "10px",
-    textAlign: "left",
-    fontSize: "16px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-  sideButtonActive: {
-    width: "100%",
-    border: "1px solid #0fb7a6",
-    background: "#0fb7a6",
-    color: "white",
-    borderRadius: "18px",
-    padding: "16px",
-    marginBottom: "10px",
-    textAlign: "left",
-    fontSize: "16px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-  content: {
-    background: "rgba(255,255,255,.76)",
-    border: "1px solid rgba(15,59,77,.14)",
-    borderRadius: "34px",
-    padding: "26px",
-    boxShadow: "0 24px 80px rgba(19,68,89,.12)",
-    minHeight: "950px",
-  },
-  panelHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "20px",
-    alignItems: "flex-start",
-    borderBottom: "1px solid rgba(15,59,77,.1)",
-    paddingBottom: "20px",
-    marginBottom: "22px",
-  },
-  panelTitle: {
-    fontFamily: "Georgia, serif",
-    color: "#0f3b4d",
-    fontSize: "34px",
-    margin: "0 0 10px",
-  },
-  messageGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2,minmax(0,1fr))",
-    gap: "18px",
-  },
-  messageBox: {
-    background: "rgba(255,255,255,.82)",
-    border: "1px solid rgba(15,59,77,.14)",
-    borderRadius: "26px",
-    padding: "20px",
-    minHeight: "330px",
-  },
-  messageBoxExpanded: {
-    gridColumn: "1 / -1",
-    background: "rgba(255,255,255,.9)",
-    border: "1px solid rgba(15,59,77,.14)",
-    borderRadius: "26px",
-    padding: "20px",
-    minHeight: "790px",
-  },
-  boxTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "14px",
-    alignItems: "center",
-    borderBottom: "1px solid rgba(15,59,77,.1)",
-    paddingBottom: "14px",
-    marginBottom: "14px",
-  },
-  expandButton: {
-    border: "1px solid #0fb7a6",
-    color: "#0fb7a6",
-    background: "white",
-    borderRadius: "999px",
-    padding: "9px 13px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-  messageCard: {
-    background: "white",
-    border: "1px solid rgba(15,59,77,.1)",
-    borderRadius: "18px",
-    padding: "15px",
-    marginBottom: "12px",
-  },
-  meta: {
-    color: "#5d7685",
-    fontSize: "13px",
-    fontWeight: 700,
-  },
-  actionRow: {
-    display: "flex",
-    gap: "8px",
-    flexWrap: "wrap",
-    marginTop: "10px",
-  },
-  smallButton: {
-    border: "1px solid rgba(15,59,77,.14)",
-    background: "white",
-    color: "#0f3b4d",
-    borderRadius: "999px",
-    padding: "9px 12px",
-    fontWeight: 800,
-    cursor: "pointer",
-  },
-  dangerButton: {
-    border: "1px solid #fecaca",
-    background: "white",
-    color: "#b91c1c",
-    borderRadius: "999px",
-    padding: "9px 12px",
-    fontWeight: 800,
-    cursor: "pointer",
-  },
-  primaryButton: {
-    border: "none",
-    background: "#0fb7a6",
-    color: "white",
-    borderRadius: "999px",
-    padding: "12px 16px",
-    fontWeight: 900,
-    cursor: "pointer",
-    textDecoration: "none",
-  },
-  goldButton: {
-    border: "none",
-    background: "#d49b1f",
-    color: "white",
-    borderRadius: "999px",
-    padding: "12px 16px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-  twoGrid: {
-    display: "grid",
-    gridTemplateColumns: "1.1fr .9fr",
-    gap: "18px",
-  },
-  card: {
-    background: "rgba(255,255,255,.86)",
-    border: "1px solid rgba(15,59,77,.14)",
-    borderRadius: "26px",
-    padding: "22px",
-  },
-  cardWide: {
-    gridColumn: "1 / -1",
-    background: "rgba(255,255,255,.86)",
-    border: "1px solid rgba(15,59,77,.14)",
-    borderRadius: "26px",
-    padding: "22px",
-  },
-  cardTitle: {
-    fontFamily: "Georgia, serif",
-    color: "#0f3b4d",
-    fontSize: "28px",
-    margin: "0 0 12px",
-  },
-  input: {
-    width: "100%",
-    border: "1px solid rgba(15,59,77,.16)",
-    background: "white",
-    borderRadius: "16px",
-    padding: "14px",
-    margin: "12px 0",
-    fontSize: "15px",
-    boxSizing: "border-box",
-  },
-  bookCard: {
-    display: "grid",
-    gridTemplateColumns: "96px 1fr",
-    gap: "16px",
-    alignItems: "start",
-    background: "white",
-    border: "1px solid rgba(15,59,77,.1)",
-    borderRadius: "22px",
-    padding: "16px",
-    marginTop: "14px",
-  },
-  cover: {
-    height: "130px",
-    borderRadius: "18px",
-    background: "linear-gradient(135deg,#f8fdff,#c9f2ed)",
-    display: "grid",
-    placeItems: "center",
-    textAlign: "center",
-    color: "#0f3b4d",
-    fontWeight: 900,
-    border: "1px solid rgba(15,59,77,.14)",
-  },
-  badge: {
-    display: "inline-block",
-    background: "#dcfce7",
-    color: "#166534",
-    borderRadius: "999px",
-    padding: "6px 10px",
-    fontSize: "12px",
-    fontWeight: 900,
-  },
-  linkButton: {
-    border: "1px solid #0fb7a6",
-    color: "#0fb7a6",
-    background: "white",
-    borderRadius: "999px",
-    padding: "9px 12px",
-    fontWeight: 800,
-    cursor: "pointer",
-    textDecoration: "none",
-  },
-  notice: {
-    marginTop: "14px",
-    background: "rgba(15,183,166,.1)",
-    border: "1px solid rgba(15,183,166,.18)",
-    color: "#0f3b4d",
-    borderRadius: "18px",
-    padding: "12px",
-  },
-  walletGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2,minmax(0,1fr))",
-    gap: "18px",
-    marginBottom: "18px",
-  },
-  balance: {
-    display: "block",
-    fontSize: "30px",
-    color: "#0f3b4d",
-    marginTop: "8px",
-  },
-  profileGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2,minmax(0,1fr))",
-    gap: "18px",
-  },
-  pills: {
-    display: "flex",
-    gap: "8px",
-    flexWrap: "wrap",
-    marginTop: "12px",
-    marginBottom: "14px",
-  },
-  pill: {
-    background: "#0fb7a6",
-    color: "white",
-    borderRadius: "999px",
-    padding: "8px 12px",
-    fontWeight: 900,
-  },
-  warning: {
-    background: "#fff7ed",
-    color: "#9a3412",
-    border: "1px solid #fed7aa",
-    borderRadius: "18px",
-    padding: "14px",
-    lineHeight: 1.6,
-    marginBottom: "14px",
-  },
-  religionGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4,minmax(0,1fr))",
-    gap: "10px",
-    margin: "12px 0",
-  },
-  religionGridTwo: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2,minmax(0,1fr))",
-    gap: "10px",
-    margin: "12px 0",
-  },
-  choice: {
-    border: "1px solid rgba(15,59,77,.14)",
-    background: "white",
-    color: "#0f3b4d",
-    borderRadius: "16px",
-    padding: "13px",
-    fontWeight: 900,
-    textAlign: "center",
-    cursor: "pointer",
-  },
-  choiceActive: {
-    border: "1px solid #0fb7a6",
-    background: "#0fb7a6",
-    color: "white",
-    borderRadius: "16px",
-    padding: "13px",
-    fontWeight: 900,
-    textAlign: "center",
-    cursor: "pointer",
-  },
-  innerCard: {
-    background: "white",
-    border: "1px solid rgba(15,59,77,.12)",
-    borderRadius: "22px",
-    padding: "16px",
-    marginTop: "14px",
-  },
-  studioCard: {
-    background: "linear-gradient(135deg, rgba(212,155,31,.18), rgba(255,255,255,.85))",
-    border: "1px solid rgba(15,59,77,.14)",
-    borderRadius: "26px",
-    padding: "22px",
-  },
+  page: { minHeight: "100vh", padding: "44px 32px 80px", color: "#163242", background: "linear-gradient(180deg, #f8fdff 0%, #eef9ff 36%, #eefaf7 68%, #d7f1f5 100%)" },
+  hero: { maxWidth: "1420px", margin: "0 auto 26px", display: "flex", justifyContent: "space-between", gap: "28px", alignItems: "center", background: "rgba(255,255,255,.76)", border: "1px solid rgba(15,59,77,.14)", borderRadius: "34px", padding: "30px", boxShadow: "0 24px 80px rgba(19,68,89,.12)" },
+  kicker: { color: "#0fb7a6", letterSpacing: "4px", textTransform: "uppercase", fontSize: "12px", fontWeight: 900 },
+  title: { fontFamily: "Georgia, serif", color: "#0f3b4d", fontSize: "44px", margin: "10px 0" },
+  muted: { color: "#5d7685", lineHeight: 1.7 },
+  mutedSmall: { color: "#5d7685", fontSize: "13px", lineHeight: 1.6 },
+  profileMini: { display: "flex", alignItems: "center", gap: "16px", minWidth: "330px", background: "rgba(255,255,255,.75)", border: "1px solid rgba(15,59,77,.14)", borderRadius: "24px", padding: "16px" },
+  avatar: { width: "78px", height: "78px", borderRadius: "50%", background: "linear-gradient(135deg,#fff,#0fb7a6)", border: "4px solid white", display: "grid", placeItems: "center", fontSize: "28px", fontWeight: 900, color: "#0f3b4d" },
+  avatarButton: { border: "none", background: "#0fb7a6", color: "white", borderRadius: "999px", padding: "9px 13px", fontWeight: 900, marginTop: "8px", cursor: "pointer" },
+  layout: { maxWidth: "1420px", margin: "0 auto", display: "grid", gridTemplateColumns: "280px minmax(0,1fr)", gap: "24px", alignItems: "start" },
+  sidebar: { position: "sticky", top: "102px", background: "rgba(255,255,255,.76)", border: "1px solid rgba(15,59,77,.14)", borderRadius: "28px", padding: "18px", boxShadow: "0 24px 80px rgba(19,68,89,.12)" },
+  sideTitle: { color: "#0fb7a6", letterSpacing: "3px", textTransform: "uppercase", fontSize: "12px", fontWeight: 900, margin: "4px 0 14px" },
+  sideButton: { width: "100%", border: "1px solid rgba(15,59,77,.14)", background: "white", color: "#0f3b4d", borderRadius: "18px", padding: "16px", marginBottom: "10px", textAlign: "left", fontSize: "16px", fontWeight: 900, cursor: "pointer" },
+  sideButtonActive: { width: "100%", border: "1px solid #0fb7a6", background: "#0fb7a6", color: "white", borderRadius: "18px", padding: "16px", marginBottom: "10px", textAlign: "left", fontSize: "16px", fontWeight: 900, cursor: "pointer" },
+  content: { background: "rgba(255,255,255,.76)", border: "1px solid rgba(15,59,77,.14)", borderRadius: "34px", padding: "26px", boxShadow: "0 24px 80px rgba(19,68,89,.12)", minHeight: "950px" },
+  panelHeader: { display: "flex", justifyContent: "space-between", gap: "20px", alignItems: "flex-start", borderBottom: "1px solid rgba(15,59,77,.1)", paddingBottom: "20px", marginBottom: "22px" },
+  panelTitle: { fontFamily: "Georgia, serif", color: "#0f3b4d", fontSize: "34px", margin: "0 0 10px" },
+  messageGrid: { display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: "18px" },
+  messageBox: { background: "rgba(255,255,255,.82)", border: "1px solid rgba(15,59,77,.14)", borderRadius: "26px", padding: "20px", minHeight: "330px" },
+  messageBoxExpanded: { gridColumn: "1 / -1", background: "rgba(255,255,255,.9)", border: "1px solid rgba(15,59,77,.14)", borderRadius: "26px", padding: "20px", minHeight: "790px" },
+  boxTop: { display: "flex", justifyContent: "space-between", gap: "14px", alignItems: "center", borderBottom: "1px solid rgba(15,59,77,.1)", paddingBottom: "14px", marginBottom: "14px" },
+  expandButton: { border: "1px solid #0fb7a6", color: "#0fb7a6", background: "white", borderRadius: "999px", padding: "9px 13px", fontWeight: 900, cursor: "pointer" },
+  messageCard: { background: "white", border: "1px solid rgba(15,59,77,.1)", borderRadius: "18px", padding: "15px", marginBottom: "12px" },
+  meta: { color: "#5d7685", fontSize: "13px", fontWeight: 700 },
+  actionRow: { display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "10px" },
+  smallButton: { border: "1px solid rgba(15,59,77,.14)", background: "white", color: "#0f3b4d", borderRadius: "999px", padding: "9px 12px", fontWeight: 800, cursor: "pointer" },
+  dangerButton: { border: "1px solid #fecaca", background: "white", color: "#b91c1c", borderRadius: "999px", padding: "9px 12px", fontWeight: 800, cursor: "pointer" },
+  primaryButton: { border: "none", background: "#0fb7a6", color: "white", borderRadius: "999px", padding: "12px 16px", fontWeight: 900, cursor: "pointer", textDecoration: "none" },
+  goldButton: { border: "none", background: "#d49b1f", color: "white", borderRadius: "999px", padding: "12px 16px", fontWeight: 900, cursor: "pointer" },
+  twoGrid: { display: "grid", gridTemplateColumns: "1.1fr .9fr", gap: "18px" },
+  card: { background: "rgba(255,255,255,.86)", border: "1px solid rgba(15,59,77,.14)", borderRadius: "26px", padding: "22px" },
+  cardWide: { gridColumn: "1 / -1", background: "rgba(255,255,255,.86)", border: "1px solid rgba(15,59,77,.14)", borderRadius: "26px", padding: "22px" },
+  cardTitle: { fontFamily: "Georgia, serif", color: "#0f3b4d", fontSize: "28px", margin: "0 0 12px" },
+  input: { width: "100%", border: "1px solid rgba(15,59,77,.16)", background: "white", borderRadius: "16px", padding: "14px", margin: "12px 0", fontSize: "15px", boxSizing: "border-box" },
+  textarea: { width: "100%", minHeight: "100px", border: "1px solid rgba(15,59,77,.16)", background: "white", borderRadius: "16px", padding: "14px", margin: "12px 0", fontSize: "15px", boxSizing: "border-box" },
+  bookCard: { display: "grid", gridTemplateColumns: "96px 1fr", gap: "16px", alignItems: "start", background: "white", border: "1px solid rgba(15,59,77,.1)", borderRadius: "22px", padding: "16px", marginTop: "14px" },
+  cover: { height: "130px", borderRadius: "18px", background: "linear-gradient(135deg,#f8fdff,#c9f2ed)", display: "grid", placeItems: "center", textAlign: "center", color: "#0f3b4d", fontWeight: 900, border: "1px solid rgba(15,59,77,.14)" },
+  badge: { display: "inline-block", background: "#dcfce7", color: "#166534", borderRadius: "999px", padding: "6px 10px", fontSize: "12px", fontWeight: 900 },
+  linkButton: { border: "1px solid #0fb7a6", color: "#0fb7a6", background: "white", borderRadius: "999px", padding: "9px 12px", fontWeight: 800, cursor: "pointer", textDecoration: "none" },
+  notice: { marginTop: "14px", background: "rgba(15,183,166,.1)", border: "1px solid rgba(15,183,166,.18)", color: "#0f3b4d", borderRadius: "18px", padding: "12px" },
+  walletGrid: { display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: "18px", marginBottom: "18px" },
+  balance: { display: "block", fontSize: "30px", color: "#0f3b4d", marginTop: "8px" },
+  profileGrid: { display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: "18px" },
+  pills: { display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "12px", marginBottom: "14px" },
+  pill: { background: "#0fb7a6", color: "white", borderRadius: "999px", padding: "8px 12px", fontWeight: 900 },
+  warning: { background: "#fff7ed", color: "#9a3412", border: "1px solid #fed7aa", borderRadius: "18px", padding: "14px", lineHeight: 1.6, marginBottom: "14px" },
+  religionGrid: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: "10px", margin: "12px 0" },
+  religionGridTwo: { display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: "10px", margin: "12px 0" },
+  choice: { border: "1px solid rgba(15,59,77,.14)", background: "white", color: "#0f3b4d", borderRadius: "16px", padding: "13px", fontWeight: 900, textAlign: "center", cursor: "pointer" },
+  choiceActive: { border: "1px solid #0fb7a6", background: "#0fb7a6", color: "white", borderRadius: "16px", padding: "13px", fontWeight: 900, textAlign: "center", cursor: "pointer" },
+  innerCard: { background: "white", border: "1px solid rgba(15,59,77,.12)", borderRadius: "22px", padding: "16px", marginTop: "14px" },
+  studioCard: { background: "linear-gradient(135deg, rgba(212,155,31,.18), rgba(255,255,255,.85))", border: "1px solid rgba(15,59,77,.14)", borderRadius: "26px", padding: "22px" },
+  formBox: { marginTop: "18px", background: "rgba(255,255,255,.72)", border: "1px solid rgba(15,59,77,.12)", borderRadius: "24px", padding: "18px" },
+  agreementBox: { background: "white", border: "1px solid rgba(15,59,77,.12)", borderRadius: "20px", padding: "16px", marginTop: "14px" },
+  agreementText: { maxHeight: "180px", overflow: "auto", background: "#f8fdff", border: "1px solid rgba(15,59,77,.12)", borderRadius: "16px", padding: "14px", color: "#0f3b4d", lineHeight: 1.7 },
+  checkboxLabel: { display: "flex", gap: "10px", alignItems: "center", marginTop: "12px", fontWeight: 800 },
 };
