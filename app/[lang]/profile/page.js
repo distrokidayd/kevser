@@ -15,13 +15,18 @@ export default function ProfilePage({ params }) {
   const [sealCode, setSealCode] = useState("");
   const [sealMessage, setSealMessage] = useState("");
 
+  const [notifications, setNotifications] = useState([]);
+
   const [editMode, setEditMode] = useState(false);
   const [religion, setReligion] = useState("islam");
   const [isSect, setIsSect] = useState(false);
   const [sect, setSect] = useState("");
 
   useEffect(() => {
-    if (isSignedIn) loadBooks();
+    if (isSignedIn) {
+      loadBooks();
+      loadNotifications();
+    }
   }, [isSignedIn]);
 
   async function loadBooks() {
@@ -34,6 +39,16 @@ export default function ProfilePage({ params }) {
       console.error(err);
     } finally {
       setBooksLoading(false);
+    }
+  }
+
+  async function loadNotifications() {
+    try {
+      const res = await fetch("/api/notifications");
+      const data = await res.json();
+      if (data.success) setNotifications(data.notifications || []);
+    } catch (err) {
+      console.error(err);
     }
   }
 
@@ -192,7 +207,7 @@ export default function ProfilePage({ params }) {
             <>
               <PanelHeader
                 title="Mesajlar"
-                desc="Dört mesaj alanı tek panelde gruplanır. Sayfayı büyüt seçildiğinde seçilen kutu tüm alanı kaplar."
+                desc="Dört mesaj alanı ve sistem mesajları burada gruplanır. Admin kararları Sistem Mesajları alanına düşer."
               />
 
               <section style={styles.messageGrid}>
@@ -256,6 +271,27 @@ export default function ProfilePage({ params }) {
                         <button style={styles.smallButton}>Katıl</button>
                         <button style={styles.dangerButton}>Şikayet Et</button>
                       </div>
+                    </MessageCard>
+                  ))}
+                </MessageBox>
+
+                <MessageBox
+                  id="system"
+                  title="Sistem Mesajları"
+                  expandedBox={expandedBox}
+                  setExpandedBox={setExpandedBox}
+                >
+                  {notifications.length === 0 && (
+                    <p style={styles.muted}>Henüz sistem mesajı yok.</p>
+                  )}
+
+                  {notifications.map((n) => (
+                    <MessageCard
+                      key={n.id}
+                      meta={new Date(n.created_at).toLocaleString("tr-TR")}
+                    >
+                      <strong>{n.title}</strong>
+                      <p>{n.message}</p>
                     </MessageCard>
                   ))}
                 </MessageBox>
@@ -477,7 +513,7 @@ export default function ProfilePage({ params }) {
                             <option>Alevî</option>
                             <option>Bektaşî</option>
                             <option>Mâtürîdî</option>
-                            <option>Eş'arî</option>
+                            <option>Eş&apos;arî</option>
                             <option>Selefî</option>
                             <option>Sûfî</option>
                             <option>Diğer</option>
@@ -575,7 +611,7 @@ function MessageCard({ meta, children }) {
   return (
     <div style={styles.messageCard}>
       <div style={styles.meta}>{meta}</div>
-      <p>{children}</p>
+      <div>{children}</div>
     </div>
   );
 }
