@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 export default function StorePage({ params }) {
   const lang = params?.lang || "tr";
+
+  const [loadingId, setLoadingId] = useState(null);
+  const [message, setMessage] = useState("");
 
   const books = [
     {
@@ -9,16 +15,50 @@ export default function StorePage({ params }) {
       title: "Ömer Hayyam — Rubailer",
       author: "Ömer Hayyam",
       price: "120₺",
+      slug: "omerhayyam-rubailer",
       href: `/${lang}/books/omerhayyam/rubailer`,
     },
   ];
+
+  async function buyBook(book) {
+    try {
+      setLoadingId(book.id);
+      setMessage("");
+
+      const res = await fetch("/api/buy-book", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          book_slug: book.slug,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setMessage(data.error || "Satın alma başarısız.");
+        return;
+      }
+
+      setMessage(`Kitap eklendi! Mühür kodun: ${data.seal}`);
+    } catch (error) {
+      console.error(error);
+      setMessage("Bir hata oluştu.");
+    } finally {
+      setLoadingId(null);
+    }
+  }
 
   return (
     <main style={styles.page}>
       <section style={styles.header}>
         <h1>Mağaza</h1>
-        <p>Tüm kitaplar burada satılır ve tahlil alanına bağlanır.</p>
+        <p>Kitap satın al ve tahlil alanına katıl.</p>
       </section>
+
+      {message && <div style={styles.message}>{message}</div>}
 
       <section style={styles.layout}>
         <div style={styles.grid}>
@@ -34,7 +74,15 @@ export default function StorePage({ params }) {
                 <p>{book.price}</p>
 
                 <div style={styles.buttons}>
-                  <button style={styles.buy}>Sepete Ekle</button>
+                  <button
+                    onClick={() => buyBook(book)}
+                    style={styles.buy}
+                    disabled={loadingId === book.id}
+                  >
+                    {loadingId === book.id
+                      ? "İşleniyor..."
+                      : "Sepete Ekle"}
+                  </button>
 
                   <Link href={book.href} style={styles.analyze}>
                     Tahlil’e Git
@@ -46,10 +94,10 @@ export default function StorePage({ params }) {
         </div>
 
         <aside style={styles.banner}>
-          <h2>Kitabı Oku, Tahlile Katıl</h2>
+          <h2>Kitabı Al, Yorum Yaz</h2>
           <p>
-            Satın aldığın kitaplar hesabına tanımlanır. Ardından şerh, yorum ve
-            tartışma alanında katkı verebilirsin.
+            Kitabı satın aldığında hesabına tanımlanır. Ardından yorum, şerh ve
+            tartışma alanında yazabilirsin.
           </p>
 
           <button style={styles.buy}>Kitap Satın Al</button>
@@ -68,6 +116,13 @@ const styles = {
   },
   header: {
     marginBottom: "30px",
+  },
+  message: {
+    background: "#052e16",
+    color: "#4ade80",
+    padding: "12px",
+    borderRadius: "10px",
+    marginBottom: "20px",
   },
   layout: {
     display: "grid",
@@ -95,7 +150,6 @@ const styles = {
     alignItems: "center",
     marginBottom: "12px",
   },
-  info: {},
   buttons: {
     display: "flex",
     gap: "10px",
