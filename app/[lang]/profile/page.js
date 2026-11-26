@@ -10,6 +10,21 @@ export default function ProfilePage({ params }) {
   const [activeTab, setActiveTab] = useState("messages");
   const [expandedBox, setExpandedBox] = useState(null);
 
+  const [editorLink, setEditorLink] = useState(null);
+  useEffect(() => {
+    let active = true;
+    setEditorLink(null);
+    if (user?.id) {
+      fetch("/api/kitap-editoru", { cache: "no-store" })
+        .then((response) => response.ok ? response.json() : null)
+        .then((data) => {
+          if (active && data?.available) setEditorLink(data.href);
+        })
+        .catch(() => {});
+    }
+    return () => { active = false; };
+  }, [user?.id]);
+
   const [books, setBooks] = useState([]);
   const [booksLoading, setBooksLoading] = useState(false);
   const [sealCode, setSealCode] = useState("");
@@ -644,6 +659,7 @@ export default function ProfilePage({ params }) {
 
                 <div style={styles.card}>
                   <h2 style={styles.cardTitle}>Stüdyoya Git</h2>
+                  {editorLink && <p><a href={`/${lang}/kitap-editoru`}>Kitabımı düzenle ↗</a></p>}
                   <p style={styles.muted}>Yayıncı olarak kabul edilmeden bu alan aktif olmaz.</p>
                   <button style={styles.smallButton}>Yayıncı olarak kabul edilmeniz gerekiyor</button>
                 </div>
