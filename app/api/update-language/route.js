@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
 
     if (!userId) {
       return Response.json(
@@ -33,7 +33,7 @@ export async function POST(req) {
         known_languages: knownLanguages,
         site_language: nativeLanguage,
       })
-      .eq("user_id", userId);
+      .eq("id", userId);
 
     if (error) {
       return Response.json(

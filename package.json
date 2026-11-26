@@ -4,13 +4,16 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "prebuild": "node scripts/kitaplari-hazirla.cjs",
+    "predev": "node scripts/kitaplari-hazirla.cjs"
   },
   "dependencies": {
-  "@clerk/nextjs": "latest",
-  "@supabase/supabase-js": "latest",
-  "next": "latest",
-  "react": "latest",
-  "react-dom": "latest"
-}
+    "@clerk/nextjs": "latest",
+    "@supabase/supabase-js": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "jszip": "3.10.1"
+  }
 }

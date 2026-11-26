@@ -21,7 +21,7 @@ export async function POST() {
       email?.split("@")[0] ||
       "kevser_user";
 
-    console.log("USER:", user.id, email, username);
+
 
     const { data, error } = await supabase
       .from("profiles")
@@ -29,9 +29,9 @@ export async function POST() {
         id: user.id,
         email,
         username,
-        role: "user",
+
       })
-      .select();
+      .select("id, username");
 
     if (error) {
       console.error("SUPABASE ERROR:", error);
