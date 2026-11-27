@@ -34,7 +34,7 @@ export async function GET() {
       success: true,
       profile: data || null,
       role: data?.role || "user",
-      isPublisher: data?.role === "publisher",
+      isPublisher: Boolean(data?.is_publisher || data?.role === "publisher"),
     });
   } catch (err) {
     return Response.json(

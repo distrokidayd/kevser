@@ -1,32 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
-
-export async function GET() {
-  try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
-
-    const { data, error } = await supabase
-      .from("publisher_applications")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      return Response.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
-    }
-
-    return Response.json({
-      success: true,
-      applications: data || [],
-    });
-  } catch (err) {
-    return Response.json(
-      { success: false, error: err.message },
-      { status: 500 }
-    );
-  }
+import {auth} from "@clerk/nextjs/server";
+import {db,fail,isAdmin} from "../../../lib/publisherAccess";
+export async function GET(){
+  const {userId}=await auth();
+  if(!isAdmin(userId))return fail("Yönetici erişimi gerekiyor.",403);
+  const {data,error}=await db().from("publisher_applications").select("*,publisher_acceptances(application_id)").order("created_at",{ascending:false});
+  if(error)return fail("Başvuru listesi okunamadı.",503);
+  return Response.json({success:true,applications:data},{headers:{"Cache-Control":"private, no-store"}});
 }

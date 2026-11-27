@@ -1,9 +1,11 @@
+import {publisherAccess,fail} from "../../lib/publisherAccess";
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req) {
   try {
-    const { userId } = auth();
+    if(!await publisherAccess())return fail("Yayıncı erişimi gerekiyor.",403);
+    const { userId } = await auth();
 
     if (!userId) {
       return Response.json(
