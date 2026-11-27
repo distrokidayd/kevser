@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {useParams} from "next/navigation";
 import { SignInButton, useUser } from "@clerk/nextjs";
 
 export default function ProfilePage({ params }) {
-  const lang = params?.lang || "tr";
+  const {lang = "tr"} = useParams();
   const { user, isSignedIn } = useUser();
 
   const [activeTab, setActiveTab] = useState("messages");
@@ -22,6 +23,10 @@ export default function ProfilePage({ params }) {
   const [isSect, setIsSect] = useState(false);
   const [sect, setSect] = useState("");
 
+  const [access,setAccess]=useState(null);
+  const [accessError,setAccessError]=useState("");
+  const [voice,setVoice]=useState(null);
+  const [refresh,setRefresh]=useState(0);
   const [publisherFormOpen, setPublisherFormOpen] = useState(false);
   const [agreementText, setAgreementText] = useState("");
   const [publisherLoading, setPublisherLoading] = useState(false);
@@ -50,6 +55,22 @@ export default function ProfilePage({ params }) {
       }));
     }
   }, [isSignedIn, user]);
+
+  useEffect(()=>{
+    if(new URLSearchParams(location.search).get("tab")==="publisher")setActiveTab("publisher");
+  },[]);
+  useEffect(()=>{
+    let active=true;
+    setAccess(null);setAccessError("");
+    if(user?.id && activeTab==="publisher"){
+      fetch("/api/publisher/status",{cache:"no-store"}).then(async response=>{
+        const data=await response.json();
+        if(!response.ok)throw Error(data.error||"Başvuru durumu okunamadı.");
+        if(active)setAccess(data);
+      }).catch(err=>{if(active)setAccessError(err.message)});
+    }
+    return ()=>{active=false};
+  },[user?.id,activeTab,refresh]);
 
   async function loadBooks() {
     try {
@@ -139,23 +160,12 @@ export default function ProfilePage({ params }) {
         return;
       }
 
+      if(!voice||voice.size>3145728){setPublisherMessage("En çok 3 MB boyutunda bir ses kaydı seçin.");return}
       setPublisherLoading(true);
-
-      const res = await fetch("/api/publisher/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: publisherForm.fullName,
-          email: publisherForm.email,
-          phone: publisherForm.phone,
-          website: publisherForm.website,
-          socialLinks: publisherForm.socialLinks,
-          experience: publisherForm.experience,
-          reason: publisherForm.reason,
-          agreementAccepted: publisherForm.agreementAccepted,
-          voiceAcceptanceNote: `Ses dosyası: ${publisherForm.voiceFileName}`,
-        }),
-      });
+      const parts=new FormData();
+      for(const field of ["fullName","email","phone","website","socialLinks","experience","reason"])parts.set(field,publisherForm[field]);
+      parts.set("agreement",agreementText);parts.set("accepted","yes");parts.set("voice",voice);
+      const res=await fetch("/api/publisher/apply",{method:"POST",body:parts});
 
       const data = await res.json();
 
@@ -165,7 +175,7 @@ export default function ProfilePage({ params }) {
       }
 
       setPublisherMessage("Başvurunuz admin paneline gönderildi.");
-      setPublisherFormOpen(false);
+      setPublisherFormOpen(false);setVoice(null);setRefresh(v=>v+1);loadNotifications();
     } catch (err) {
       console.error(err);
       setPublisherMessage("Başvuru gönderilirken hata oluştu.");
@@ -562,14 +572,20 @@ export default function ProfilePage({ params }) {
 
               <section style={styles.twoGrid}>
                 <div style={styles.studioCard}>
-                  <h2 style={styles.cardTitle}>Yayıncı Olarak Başvur</h2>
+                  <h2 style={styles.cardTitle}>{access?.approved?"Kalıcı Dosyalarım":"Yayıncı başvurusu"}</h2>
+                  {accessError&&<p role="alert">{accessError} <button onClick={()=>setRefresh(v=>v+1)}>Tekrar dene</button></p>}
+                  {!access&&!accessError&&<p role="status">Durum yükleniyor…</p>}
+                  {access?.status==="pending"&&<p>Başvurunuz incelemede.</p>}
+                  {access?.status==="rejected"&&<p>Başvurunuz reddedildi. {access.note}</p>}
+                  {access?.fileId&&<div><a href={"/api/publisher/documents/"+access.fileId} target="_blank" rel="noreferrer">Kabul ettiğim sözleşme</a><p>Sesli kabul kaydım</p><audio controls preload="none" src={"/api/publisher/documents/"+access.fileId+"?file=voice"}/></div>}
+                  {access&&!access.approved&&access.status!=="pending"&&<>
                   <p style={styles.muted}>Sosyal medya, website, deneyim, anlaşma metni ve sesli kabul ile başvuru yapılır.</p>
 
                   <button onClick={() => setPublisherFormOpen(!publisherFormOpen)} style={styles.primaryButton}>
                     {publisherFormOpen ? "Formu Kapat" : "Başvuru Formunu Aç"}
                   </button>
 
-                  {publisherMessage && <div style={styles.notice}>{publisherMessage}</div>}
+
 
                   {publisherFormOpen && (
                     <div style={styles.formBox}>
@@ -601,7 +617,7 @@ export default function ProfilePage({ params }) {
 
                       <div style={styles.agreementBox}>
                         <h3>Anlaşma Metni</h3>
-                        <p style={styles.muted}>Bu metin kullanıcının ana diline göre gösterilecek.</p>
+
                         <div style={styles.agreementText}>
                           {agreementText || "Kevser Yayın Evi platform anlaşma metni yükleniyor..."}
                         </div>
@@ -619,33 +635,34 @@ export default function ProfilePage({ params }) {
                       <div style={styles.agreementBox}>
                         <h3>Sesli Kabul Dosyası</h3>
                         <p style={styles.muted}>
-                          Lütfen anlaşma metnini sesli olarak kaydedin ve “kabul ettim” diyerek başvurunuzu tamamlayın.
+                          Sözleşme kabulünü kaydedip en çok 3 MB boyutunda bir ses dosyası seçin.
                         </p>
 
                         <input
                           style={styles.input}
                           type="file"
-                          accept="audio/*"
+                          accept=".mp3,.m4a,.wav,.webm,.ogg"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) updatePublisherField("voiceFileName", file.name);
+                            setVoice(file||null);updatePublisherField("voiceFileName", file?.name||"");
                           }}
                         />
 
-                        {publisherForm.voiceFileName && <div style={styles.notice}>Yüklenen ses dosyası: {publisherForm.voiceFileName}</div>}
+                        {publisherForm.voiceFileName && <div style={styles.notice}>Seçilen ses dosyası: {publisherForm.voiceFileName}</div>}
                       </div>
 
-                      <button onClick={submitPublisherApplication} disabled={publisherLoading} style={styles.primaryButton}>
+                      <button onClick={submitPublisherApplication} disabled={publisherLoading || !agreementText} style={styles.primaryButton}>
                         {publisherLoading ? "Başvuru gönderiliyor..." : "Başvuruyu Gönder"}
                       </button>
                     </div>
                   )}
+                  </>}
+                  {publisherMessage&&<p role="status">{publisherMessage}</p>}
                 </div>
 
                 <div style={styles.card}>
-                  <h2 style={styles.cardTitle}>Stüdyoya Git</h2>
-                  <p style={styles.muted}>Yayıncı olarak kabul edilmeden bu alan aktif olmaz.</p>
-                  <button style={styles.smallButton}>Yayıncı olarak kabul edilmeniz gerekiyor</button>
+                  <h2 style={styles.cardTitle}>Yayıncı stüdyosu</h2>
+                  {access?.approved?<a style={styles.smallButton} href={`/${lang}/publishers`}>Stüdyoya git →</a>:<p style={styles.muted}>Başvurun onaylandığında stüdyo burada açılır.</p>}
                 </div>
               </section>
             </>

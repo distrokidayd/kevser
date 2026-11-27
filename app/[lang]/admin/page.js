@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 export default function AdminPage() {
   const [applications, setApplications] = useState([]);
+  const [loadError,setLoadError]=useState("");
   const [loading, setLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState(null);
   const [notes, setNotes] = useState({});
@@ -14,16 +15,16 @@ export default function AdminPage() {
 
   async function loadApplications() {
     try {
-      setLoading(true);
+      setLoading(true);setLoadError("");
 
       const res = await fetch("/api/admin/publisher-applications");
       const data = await res.json();
 
       if (data.success) {
         setApplications(data.applications || []);
-      }
+      }else {setApplications([]);setLoadError(data.error||"Liste okunamadı.")}
     } catch (error) {
-      console.error("Başvurular alınamadı:", error);
+      setLoadError("Başvuru listesine ulaşılamadı.");
     } finally {
       setLoading(false);
     }
@@ -81,7 +82,8 @@ export default function AdminPage() {
       <section style={styles.content}>
         {loading && <p style={styles.muted}>Başvurular yükleniyor...</p>}
 
-        {!loading && applications.length === 0 && (
+        {loadError&&<p role="alert">{loadError}</p>}
+        {!loadError && !loading && applications.length === 0 && (
           <div style={styles.emptyBox}>Henüz yayıncı başvurusu yok.</div>
         )}
 
@@ -121,7 +123,7 @@ export default function AdminPage() {
 
               <div style={styles.block}>
                 <strong>Sesli Kabul</strong>
-                <p>{app.voice_acceptance_note || "Belirtilmemiş"}</p>
+                {(Array.isArray(app.publisher_acceptances)?app.publisher_acceptances.length>0:!!app.publisher_acceptances)?<div><audio controls preload="none" src={"/api/publisher/documents/"+app.id+"?file=voice"}/><p><a href={"/api/publisher/documents/"+app.id} target="_blank" rel="noreferrer">Kabul edilen sözleşmeyi aç</a></p></div>:<p>Bu başvuruda kayıtlı dosya bulunmuyor.</p>}
               </div>
 
               <textarea
@@ -139,7 +141,7 @@ export default function AdminPage() {
               <div style={styles.actions}>
                 <button
                   onClick={() => reviewApplication(app.id, "approve")}
-                  disabled={reviewingId === app.id || app.status === "approved"}
+                  disabled={reviewingId === app.id || app.status !== "pending"}
                   style={styles.approveButton}
                 >
                   {reviewingId === app.id ? "İşleniyor..." : "Onayla"}
@@ -147,7 +149,7 @@ export default function AdminPage() {
 
                 <button
                   onClick={() => reviewApplication(app.id, "reject")}
-                  disabled={reviewingId === app.id || app.status === "rejected"}
+                  disabled={reviewingId === app.id || app.status !== "pending"}
                   style={styles.rejectButton}
                 >
                   {reviewingId === app.id ? "İşleniyor..." : "Reddet"}
