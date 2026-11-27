@@ -7,6 +7,7 @@ export default clerkMiddleware((auth, req) => {
   const { pathname } = req.nextUrl;
 
   if (
+    pathname.startsWith("/eserler/") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/trpc")

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-export default function HomePage({ params }) {
-  const lang = params?.lang || "tr";
+export default async function HomePage({ params }) {
+  const {lang} = await params;
 
   return (
     <main style={styles.page}>
@@ -15,6 +15,7 @@ export default function HomePage({ params }) {
 
         <div style={styles.copyPanel}>
           <div style={styles.kicker}>Biz Kimiz</div>
+          <Link href={`/${lang}/books`} style={{color:"#285545"}}>20 klasik eseri oku veya EPUB indir →</Link>
           <h1 style={styles.heroTitle}>
             Kevser <span style={styles.accent}>Publishing House</span>
           </h1>
